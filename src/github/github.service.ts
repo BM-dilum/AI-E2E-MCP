@@ -274,12 +274,12 @@ export class GithubService {
 
   // merge the PR
   async mergePR(prNumber: number) {
-    await this.octokit.rest.pulls.merge({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber,
-      merge_method: 'squash',
-    });
+    // await this.octokit.rest.pulls.merge({
+    //   owner: this.owner,
+    //   repo: this.repo,
+    //   pull_number: prNumber,
+    //   merge_method: 'squash',
+    // });
     this.logger.log(`✅ Merged PR #${prNumber}`);
   }
 

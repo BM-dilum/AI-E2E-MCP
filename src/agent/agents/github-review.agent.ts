@@ -38,7 +38,7 @@ export class GithubReviewAgent {
         2. trigger_review
         3. wait_for_review
         4. If approved → merge_pr → stop
-        5. If anything else → return the review result string exactly as received, do not take further action
+        5. If anything else → return the review result string exactly as received -> stop
 
         RULES:
         - Only merge if explicitly approved

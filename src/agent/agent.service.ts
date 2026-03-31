@@ -78,6 +78,7 @@ export class AgentService {
 
     // Stage 4b: Fix loop — only if needed
     if (!reviewResult.includes('approved')) {
+      this.logger.warn(reviewResult, 'reviewResult');
       await this.githubFixAgent.run(plan.branch, repoPath);
     }
 

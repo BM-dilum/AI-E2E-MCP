@@ -76,11 +76,10 @@ export class AgentService {
       plan.prTitle,
     );
 
-    console.log(reviewResult, 'reviewResult');
     // Stage 4b: Fix loop — only if needed
-    // if (!reviewResult.includes('approved')) {
-    //   await this.githubFixAgent.run(plan.branch, repoPath);
-    // }
+    if (!reviewResult.includes('approved')) {
+      await this.githubFixAgent.run(plan.branch, repoPath);
+    }
 
     return { success: true };
   }

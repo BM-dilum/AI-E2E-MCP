@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq from 'groq-sdk';
+import { GeneratedFileSummary } from 'src/agent/agent.service';
 
 export interface GeneratedFiles {
   path: string;
@@ -79,12 +80,12 @@ export class GroqService {
     spec: string,
     filePath: string,
     plan: SprintPlan,
-    previousFiles: GeneratedFiles[],
+    previousFiles: GeneratedFileSummary[],
   ): Promise<string> {
     this.logger.log(`Generating ${filePath}`);
 
     const context = previousFiles
-      .map((f) => `FILE: ${f.path}\n${f.content}`)
+      .map((f) => `FILE: ${f.path}\n${f.exports}`)
       .join('\n\n---\n\n');
 
     const allFiles = plan.filePaths.join('\n') ?? '';

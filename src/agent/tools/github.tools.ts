@@ -41,7 +41,6 @@ export class GithubTools {
       async ({ prNumber }) => {
         const { inline, general } =
           await this.githubService.getAllComments(prNumber);
-        console.log(inline, `<-inline`, general, `<-general`);
         return JSON.stringify({
           total: inline.length + general.length,
           files: [...new Set(inline.map((c) => c.path))],

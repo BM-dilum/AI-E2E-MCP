@@ -23,10 +23,6 @@
     "@anthropic-ai/sdk": "^0.80.0",
     "@langchain/core": "^1.1.36",
     "@langchain/groq": "^1.1.5",
-<<<<<<< Updated upstream
-    "@langchain/langgraph": "^1.2.6",
-=======
->>>>>>> Stashed changes
     "@modelcontextprotocol/sdk": "^1.28.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.3",

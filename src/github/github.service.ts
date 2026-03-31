@@ -291,4 +291,12 @@ export class GithubService {
       body,
     });
   }
+
+  async getBranch(branch: string) {
+    return this.octokit.rest.repos.getBranch({
+      owner: this.owner,
+      repo: this.repo,
+      branch,
+    });
+  }
 }

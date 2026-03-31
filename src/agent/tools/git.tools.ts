@@ -90,16 +90,34 @@ export class GitTools {
   commitAndPush(repoPath?: string) {
     return tool(
       async ({ branch, message }) => {
+        const passed = this.gitService.runTests();
+        if (!passed) return 'PUSH_BLOCKED: tests are still failing';
+
         const pushed = this.gitService.commitAndPush(branch, message, repoPath);
         return pushed ? 'PUSHED' : 'NOTHING_TO_PUSH';
       },
       {
         name: 'commit_and_push',
-        description: 'Commit and push to GitHub',
+        description: 'Commit and push to GitHub. Blocked if tests are failing',
         schema: z.object({
           branch: z.string(),
           message: z.string(),
         }),
+      },
+    );
+  }
+
+  pushBranch(repoPath?: string) {
+    return tool(
+      async ({ branch }) => {
+        this.gitService.pushBranch(branch, repoPath);
+        return `BRANCH_PUSHED: ${branch}`;
+      },
+      {
+        name: 'push_branch',
+        description:
+          'Push the new branch to GitHub so PR can be created later.',
+        schema: z.object({ branch: z.string() }),
       },
     );
   }

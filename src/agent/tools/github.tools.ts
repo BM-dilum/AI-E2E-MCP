@@ -16,8 +16,13 @@ export class GithubTools {
   openPR() {
     return tool(
       async ({ branch, title, body }) => {
+        try {
+          this.gitService.getCurrentBranch();
+        } catch (error) {
+          return `PR_BLOCKED: branch ${branch} does not exist on GitHub — push it first`;
+        }
         const pr = await this.githubService.openPR(branch, title, body);
-        return JSON.stringify({ number: pr.number, url: pr.html_url });
+        return `PR_OPENED: ${JSON.stringify({ number: pr.number, url: pr.html_url })}`;
       },
       {
         name: 'open_pr',
@@ -88,12 +93,15 @@ export class GithubTools {
   commitAndPush(repoPath?: string) {
     return tool(
       async ({ branch, message }) => {
+        const passed = this.gitService.runTests();
+        if (!passed) return 'PUSH_BLOCKED: tests are still failing';
+
         const pushed = this.gitService.commitAndPush(branch, message, repoPath);
         return pushed ? 'PUSHED' : 'NOTHING_TO_PUSH';
       },
       {
         name: 'commit_and_push',
-        description: 'Commit fixed files and push',
+        description: 'Commit and push to GitHub. Blocked if tests are failing',
         schema: z.object({
           branch: z.string(),
           message: z.string(),

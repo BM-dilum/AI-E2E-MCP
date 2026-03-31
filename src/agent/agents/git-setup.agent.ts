@@ -30,8 +30,15 @@ export class GitSetupAgent {
       tools: [
         this.gitTools.checkoutMain(repoPath),
         this.gitTools.createBranch(repoPath),
+        this.gitTools.pushBranch(repoPath),
       ],
-      systemPrompt: 'Checkout main, create branch.',
+      systemPrompt: `
+          You are a git setup agent.
+          Call these tools ONCE each, in this exact order:
+          1. checkout_main — call it ONCE
+          2. create_branch with name: ${branch} — call it ONCE
+          3. push_branch branch=${branch} — ONCE
+          You are done. Do not call any tool more than once. Stop immediately after create_branch.`,
       middleware: [],
     });
 

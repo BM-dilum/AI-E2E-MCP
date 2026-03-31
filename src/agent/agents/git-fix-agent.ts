@@ -16,7 +16,7 @@ export class GitFixAgent {
   private getModel() {
     return new ChatGroq({
       apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
-      model: 'llama-3.1-8b-instant',
+      model: 'llama-3.3-70b-versatile',
       temperature: 0.1,
     });
   }

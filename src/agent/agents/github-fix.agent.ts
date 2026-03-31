@@ -36,7 +36,7 @@ export class GithubFixAgent {
         this.githubTools.resolveComments(),
         this.githubTools.triggerReview(),
         this.githubTools.waitForReview(),
-        this.githubTools.mergePR(),
+        // this.githubTools.mergePR(),
       ],
       systemPrompt: `
         Fix CodeRabbit comments and merge.

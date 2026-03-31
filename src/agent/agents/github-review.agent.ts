@@ -30,7 +30,7 @@ export class GithubReviewAgent {
         this.githubTools.openPR(),
         this.githubTools.triggerReview(),
         this.githubTools.waitForReview(),
-        this.githubTools.mergePR(),
+        // this.githubTools.mergePR(),
       ],
       systemPrompt: `
         You are a GitHub review agent. Execute these steps in order:

@@ -16,6 +16,15 @@ export class GitService {
     );
   }
 
+  getCurrentBranch(repoPath?: string): string {
+    const root = this.getRepoPath(repoPath);
+    return execSync('git rev-parse --abbrev-ref HEAD', {
+      cwd: root,
+    })
+      .toString()
+      .trim();
+  }
+
   //checkout to main and pull request
   checkoutMain(repoPath?: string) {
     const root = this.getRepoPath(repoPath);
@@ -165,5 +174,10 @@ export class GitService {
       this.logger.error(`❌ Failed to execute command : ${command}`);
       return false;
     }
+  }
+
+  pushBranch(branch: string, repoPath?: string) {
+    const root = this.getRepoPath(repoPath);
+    execSync(`git push -u origin ${branch}`, { cwd: root });
   }
 }

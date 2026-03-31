@@ -23,7 +23,6 @@ export class AgentService {
     private githubFixAgent: GithubFixAgent,
     private groqService: GroqService,
     private gitService: GitService,
-    private configService: ConfigService,
   ) {}
 
   //helper function

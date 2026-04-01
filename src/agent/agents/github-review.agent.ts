@@ -37,10 +37,11 @@ export class GithubReviewAgent {
         1. open_pr — use the branch and title provided
         2. trigger_review
         3. wait_for_review
-        4. If approved → merge_pr → stop
-        5. If anything else → return the review result string exactly as received, do not take further action
+        4. If approved → merge_pr → return: APPROVED prNumber=<number>
+        5. If not approved → return: NOT_APPROVED prNumber=<number> result=<result>
 
         RULES:
+        - ALWAYS include prNumber=<number> in your final response.
         - Only merge if explicitly approved
         - Do not loop or retry
         - Return the raw review result if not approved

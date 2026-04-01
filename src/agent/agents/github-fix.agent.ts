@@ -23,7 +23,7 @@ export class GithubFixAgent {
     });
   }
 
-  async run(branch: string, repoPath?: string) {
+  async run(branch: string, prNumber: number, repoPath?: string) {
     this.logger.log(`🔁 GithubFixAgent: branch=${branch}`);
 
     const agent = createAgent({
@@ -39,15 +39,20 @@ export class GithubFixAgent {
         // this.githubTools.mergePR(),
       ],
       systemPrompt: `
-        Fix CodeRabbit comments and merge.
-        1. get_comments
-        2. fix_file for each file in comments
-        3. run_tests — never push if failing
-        4. commit_and_push
-        5. resolve_comments
-        6. trigger_review → wait_for_review
-        7. If approved → merge_pr → stop
-        8. Repeat max 5 times
+      The PR number is ${prNumber}. The branch is ${branch}.
+      Always use prNumber=${prNumber} for every tool call. Never use any other PR number.
+
+
+        1. get_comments with prNumber=${prNumber}
+        2.If NO_COMMENTS → merge_pr with prNumber=${prNumber} → stop
+        3.fix_file for each file listed in comments using exact file paths
+        4. run_tests — never push if failing
+        5. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
+        6. resolve_comments with prNumber=${prNumber}
+        7. trigger_review with prNumber=${prNumber}
+        8.wait_for_review with prNumber=${prNumber}
+        8. If approved → merge_pr with prNumber=${prNumber} → stop
+        9. Repeat max 5 times
       `,
       middleware: [],
     });
@@ -56,7 +61,7 @@ export class GithubFixAgent {
       messages: [
         {
           role: 'user',
-          content: `Fix and merge PR on branch: ${branch}`,
+          content: `Fix and merge PR #${prNumber} on branch ${branch}. Use prNumber=${prNumber} for ALL tool calls.`,
         },
       ],
     });

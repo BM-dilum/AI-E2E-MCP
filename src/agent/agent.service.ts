@@ -76,16 +76,27 @@ export class AgentService {
       plan.prTitle,
     );
 
+    const match = reviewResult.match(/prNumber=(\d+)/);
+    const prNumber = match ? parseInt(match[1]) : null;
+
+    this.logger.log(`📋 Review result: ${reviewResult}`);
+    this.logger.log(`📋 PR number: ${prNumber}`);
+
+    if (!prNumber) {
+      this.logger.error('❌ Could not extract PR number');
+      return { success: false, message: 'Could not extract PR number' };
+    }
+
     // Stage 4b: Fix loop — only if needed
     if (!reviewResult.includes('approved')) {
-      await this.githubFixAgent.run(plan.branch, repoPath);
+      await this.githubFixAgent.run(plan.branch, prNumber, repoPath);
     }
 
     return { success: true };
   }
 
   async fixAndMerge(prNumber: number, branch: string, repoPath?: string) {
-    await this.githubFixAgent.run(branch, repoPath);
+    await this.githubFixAgent.run(branch, prNumber, repoPath);
     return { success: true };
   }
 }

@@ -96,7 +96,7 @@ export class AgentService {
   }
 
   async fixAndMerge(prNumber: number, branch: string, repoPath?: string) {
-    await this.githubFixAgent.run(branch, prNumber, repoPath);
+    await this.githubFixAgent.run(branch, prNumber,repoPath);
     return { success: true };
   }
 }

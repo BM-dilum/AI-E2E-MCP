@@ -50,8 +50,6 @@ export class GithubFixAgent {
         4. run_tests — never push if failing
         5. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
         6. resolve_comments with prNumber=${prNumber}
-        7. trigger_review with prNumber=${prNumber}
-        8.wait_for_review with prNumber=${prNumber}
         8. If approved → merge_pr with prNumber=${prNumber} → stop
         9. Repeat max 3 times
       `,

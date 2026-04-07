@@ -28,23 +28,27 @@ export class GithubReviewAgent {
       model: this.getModel(),
       tools: [
         this.githubTools.openPR(),
-        this.githubTools.triggerReview(),
-        this.githubTools.waitForReview(),
+        this.githubTools.triggerAndWaitForReview(),
         // this.githubTools.mergePR(),
       ],
       systemPrompt: `
-        You are a GitHub review agent. Execute these steps in order:
-        1. open_pr — use the branch and title provided
-        2. trigger_review
-        3. wait_for_review
-        4. If approved → merge_pr → return: APPROVED prNumber=<number>
-        5. If not approved → return: NOT_APPROVED prNumber=<number> result=<result>
+        You are a GitHub review agent.
+        You have exactly 2 tools: open_pr and trigger_and_wait_for_review.
+        Do not call any other tools.
+
+        Steps:
+        1. open_pr — use the branch and title provided, note the PR number from response
+        2. trigger_and_wait_for_review — use the PR number from step 1
+
+        After trigger_and_wait_for_review returns:
+        - If result is APPROVED → return: APPROVED prNumber=<number>
+        - If anything else → return: NOT_APPROVED prNumber=<number> result=<result>
 
         RULES:
-        - ALWAYS include prNumber=<number> in your final response.
-        - Only merge if explicitly approved
+        - Always include prNumber=<number> in your final response
+        - Call each tool exactly once
+        - Do not merge — merging happens elsewhere
         - Do not loop or retry
-        - Return the raw review result if not approved
       `,
       middleware: [],
     });

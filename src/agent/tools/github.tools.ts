@@ -160,6 +160,22 @@ export class GithubTools {
     );
   }
 
+  triggerAndWaitForReview() {
+    return tool(
+      async ({ prNumber }) => {
+        await this.githubService.triggerReview(prNumber);
+        const result = await this.githubService.waitForReview(prNumber);
+        return result;
+      },
+      {
+        name: 'trigger_and_wait_for_review',
+        description:
+          'Triggers CodeRabbit review then waits for result. Always call this instead of trigger and wait separately.',
+        schema: z.object({ prNumber: z.number() }),
+      },
+    );
+  }
+
   mergePR() {
     return tool(
       async ({ prNumber }) => {

@@ -34,14 +34,15 @@ export class GithubFixAgent {
         this.githubTools.runTests(repoPath),
         this.githubTools.commitAndPush(repoPath),
         this.githubTools.resolveComments(),
-        this.githubTools.triggerReview(),
-        this.githubTools.waitForReview(),
+        this.githubTools.triggerAndWaitForReview(),
         // this.githubTools.mergePR(),
       ],
       systemPrompt: `
       The PR number is ${prNumber}. The branch is ${branch}.
       Always use prNumber=${prNumber} for every tool call. Never use any other PR number.
+      ALWAYS FOLLOW STEPS IN ORDER
 
+      Steps in order
 
         1. get_comments with prNumber=${prNumber}
         2.If NO_COMMENTS → merge_pr with prNumber=${prNumber} → stop
@@ -52,7 +53,7 @@ export class GithubFixAgent {
         7. trigger_review with prNumber=${prNumber}
         8.wait_for_review with prNumber=${prNumber}
         8. If approved → merge_pr with prNumber=${prNumber} → stop
-        9. Repeat max 5 times
+        9. Repeat max 3 times
       `,
       middleware: [],
     });

@@ -48,7 +48,7 @@ export class GithubReviewAgent {
           },
         ],
       },
-      { recursionLimit: 5 },
+      { recursionLimit: 10 },
     );
 
     const openOutput =
@@ -72,44 +72,16 @@ export class GithubReviewAgent {
 
     this.logger.log(`📋 Review result: ${reviewResult} for PR #${prNumber}`);
 
-    // Step 3: Agent decides what to do based on review result
-    const decisionAgent = createAgent({
-      model: this.getModel(),
-      tools: [this.githubTools.mergePR()],
-      systemPrompt: `
-      You have exactly 1 tool: merge_pr.
-      The PR number is ${prNumber}.
-      The review result is: ${reviewResult}
+    // Step 3:  decides what to do based on review result
+    const shouldMerge =
+      reviewResult === 'APPROVED' || reviewResult === 'timed_out';
 
-      Rules:
-      - If review result is APPROVED or timed_out or no comments → merge_pr prNumber=${prNumber} → return: APPROVED prNumber=${prNumber}
-      - If review result is COMMENTED or CHANGES_REQUESTED → do NOT merge → return: NOT_APPROVED prNumber=${prNumber} result=${reviewResult}
-      - Call merge_pr at most once
-      - Do not call any other tools
-    `,
-      middleware: [],
-    });
-
-    const decisionResult = await decisionAgent.invoke(
-      {
-        messages: [
-          {
-            role: 'user',
-            content: `Review result for PR #${prNumber} is: ${reviewResult}. Merge if appropriate.`,
-          },
-        ],
-      },
-      { recursionLimit: 5 },
-    );
-
-    const decisionOutput =
-      decisionResult.messages[decisionResult.messages.length - 1].content;
-    const decisionText =
-      typeof decisionOutput === 'string'
-        ? decisionOutput
-        : JSON.stringify(decisionOutput);
-
-    this.logger.log(`✅ GithubReviewAgent done: ${decisionText}`);
-    return decisionText;
+    if (shouldMerge) {
+      await this.githubService.mergePR(prNumber);
+      this.logger.log(`✅ PR #${prNumber} merged`);
+      return `APPROVED prNumber=${prNumber}`;
+    } else {
+      return `NOT_APPROVED prNumber=${prNumber} result=${reviewResult}`;
+    }
   }
 }

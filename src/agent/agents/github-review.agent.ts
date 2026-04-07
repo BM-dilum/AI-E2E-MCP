@@ -3,6 +3,7 @@ import { createAgent } from 'langchain';
 import { ChatGroq } from '@langchain/groq';
 import { ConfigService } from '@nestjs/config';
 import { GithubTools } from '../tools/github.tools';
+import { GithubService } from 'src/github/github.service';
 
 @Injectable()
 export class GithubReviewAgent {
@@ -10,6 +11,7 @@ export class GithubReviewAgent {
 
   constructor(
     private githubTools: GithubTools,
+    private githubService: GithubService,
     private configService: ConfigService,
   ) {}
 
@@ -24,46 +26,90 @@ export class GithubReviewAgent {
   async run(branch: string, prTitle: string) {
     this.logger.log(`🐙 GithubReviewAgent: branch=${branch}`);
 
-    const agent = createAgent({
+    // Step 1: Agent opens PR only
+    const openPRAgent = createAgent({
       model: this.getModel(),
-      tools: [
-        this.githubTools.openPR(),
-        this.githubTools.triggerAndWaitForReview(),
-        // this.githubTools.mergePR(),
-      ],
+      tools: [this.githubTools.openPR()],
       systemPrompt: `
-        You are a GitHub review agent.
-        You have exactly 2 tools: open_pr and trigger_and_wait_for_review.
-        Do not call any other tools.
-
-        Steps:
-        1. open_pr — use the branch and title provided, note the PR number from response
-        2. trigger_and_wait_for_review — use the PR number from step 1
-
-        After trigger_and_wait_for_review returns:
-        - If result is APPROVED → return: APPROVED prNumber=<number>
-        - If anything else → return: NOT_APPROVED prNumber=<number> result=<result>
-
-        RULES:
-        - Always include prNumber=<number> in your final response
-        - Call each tool exactly once
-        - Do not merge — merging happens elsewhere
-        - Do not loop or retry
-      `,
+      You have exactly 1 tool: open_pr.
+      Call open_pr ONCE with the branch and title provided.
+      Return the exact response including PR number.
+      Do not call any other tools.
+    `,
       middleware: [],
     });
 
-    const result = await agent.invoke({
-      messages: [
-        {
-          role: 'user',
-          content: `Open PR and review. Branch: ${branch}. Title: ${prTitle}`,
-        },
-      ],
+    const openResult = await openPRAgent.invoke(
+      {
+        messages: [
+          {
+            role: 'user',
+            content: `Open PR. Branch: ${branch}. Title: ${prTitle}`,
+          },
+        ],
+      },
+      { recursionLimit: 5 },
+    );
+
+    const openOutput =
+      openResult.messages[openResult.messages.length - 1].content;
+    const openText =
+      typeof openOutput === 'string' ? openOutput : JSON.stringify(openOutput);
+
+    const match = openText.match(/(\d+)/);
+    const prNumber = match ? parseInt(match[1]) : null;
+
+    if (!prNumber) {
+      this.logger.error('❌ Could not extract PR number');
+      return 'NOT_APPROVED prNumber=null';
+    }
+
+    this.logger.log(`✅ PR opened: #${prNumber}`);
+
+    // Step 2: Trigger + wait directly — deterministic, no agent loop
+    await this.githubService.triggerReview(prNumber);
+    const reviewResult = await this.githubService.waitForReview(prNumber);
+
+    this.logger.log(`📋 Review result: ${reviewResult} for PR #${prNumber}`);
+
+    // Step 3: Agent decides what to do based on review result
+    const decisionAgent = createAgent({
+      model: this.getModel(),
+      tools: [this.githubTools.mergePR()],
+      systemPrompt: `
+      You have exactly 1 tool: merge_pr.
+      The PR number is ${prNumber}.
+      The review result is: ${reviewResult}
+
+      Rules:
+      - If review result is APPROVED or timed_out or no comments → merge_pr prNumber=${prNumber} → return: APPROVED prNumber=${prNumber}
+      - If review result is COMMENTED or CHANGES_REQUESTED → do NOT merge → return: NOT_APPROVED prNumber=${prNumber} result=${reviewResult}
+      - Call merge_pr at most once
+      - Do not call any other tools
+    `,
+      middleware: [],
     });
 
-    const output = result.messages[result.messages.length - 1].content;
-    this.logger.log(`✅ GithubReviewAgent done: ${output}`);
-    return typeof output === 'string' ? output : JSON.stringify(output);
+    const decisionResult = await decisionAgent.invoke(
+      {
+        messages: [
+          {
+            role: 'user',
+            content: `Review result for PR #${prNumber} is: ${reviewResult}. Merge if appropriate.`,
+          },
+        ],
+      },
+      { recursionLimit: 5 },
+    );
+
+    const decisionOutput =
+      decisionResult.messages[decisionResult.messages.length - 1].content;
+    const decisionText =
+      typeof decisionOutput === 'string'
+        ? decisionOutput
+        : JSON.stringify(decisionOutput);
+
+    this.logger.log(`✅ GithubReviewAgent done: ${decisionText}`);
+    return decisionText;
   }
 }

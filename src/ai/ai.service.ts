@@ -65,7 +65,7 @@ export class AIService {
       return new ChatOpenAI({
         apiKey: this.configService.getOrThrow('OPENAI_API_KEY'),
         model: 'gpt-5-mini',
-        temperature: 0.1,
+        temperature: 1,
       });
     }
     throw new Error(`Unsupported AI_PROVIDER: ${this.provider}`);
@@ -82,7 +82,7 @@ export class AIService {
       temperature?: number;
     } = {},
   ): Promise<string> {
-    const { max_completion_tokens = 1024, temperature = 0.1 } = options;
+    const { max_completion_tokens = 1024, temperature = 1 } = options;
     if (this.provider === Providers.groq) {
       const response = await this.groq.chat.completions.create({
         model: 'llama-3.1-8b-instant',

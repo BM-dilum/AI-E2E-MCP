@@ -22,7 +22,7 @@ export class AgentService {
     private gitFixAgent: GitFixAgent,
     private githubReviewAgent: GithubReviewAgent,
     private githubFixAgent: GithubFixAgent,
-    private groqService: AIService,
+    private aiService: AIService,
     private gitService: GitService,
     private githubService: GithubService,
   ) {}
@@ -45,7 +45,7 @@ export class AgentService {
     this.logger.log('🚀 shipFeature starting');
 
     // Stage 1: Plan
-    const plan = await this.groqService.planFromSpec(spec);
+    const plan = await this.aiService.planFromSpec(spec);
 
     // Stage 2: Git setup
     await this.gitSetupAgent.run(plan.branch, repoPath);
@@ -53,7 +53,7 @@ export class AgentService {
     // Stage 2: Generate files
     const generatedSummaries: GeneratedFileSummary[] = [];
     for (const filePath of plan.filePaths) {
-      const content = await this.groqService.generateFile(
+      const content = await this.aiService.generateFile(
         spec,
         filePath,
         plan,

@@ -1,39 +1,14 @@
-"""
-Simple calculator module providing basic arithmetic operations.
-"""
+class Calculator:
+    def add(self, a, b):
+        return a + b
 
-from typing import Union
+    def subtract(self, a, b):
+        return a - b
 
-Number = Union[int, float]
+    def multiply(self, a, b):
+        return a * b
 
-__all__ = ["add", "subtract", "multiply", "divide"]
-
-
-def add(a: Number, b: Number) -> Number:
-    """
-    Return the sum of a and b.
-    """
-    return a + b
-
-
-def subtract(a: Number, b: Number) -> Number:
-    """
-    Return the difference of a and b.
-    """
-    return a - b
-
-
-def multiply(a: Number, b: Number) -> Number:
-    """
-    Return the product of a and b.
-    """
-    return a * b
-
-
-def divide(a: Number, b: Number) -> Number:
-    """
-    Return the division of a by b. Raises ValueError if b is zero.
-    """
-    if b == 0:
-        raise ValueError("Division by zero is not allowed")
-    return a / b
+    def divide(self, a, b):
+        if b == 0:
+            raise ValueError("Cannot divide by zero")
+        return a / b

@@ -5,26 +5,30 @@ import Groq from 'groq-sdk';
 import { ChatGroq } from '@langchain/groq';
 import { createAgent } from 'langchain';
 import { AIService } from 'src/ai/ai.service';
-import { ChatOpenAI } from '@langchain/openai';
 
 @Injectable()
 export class GitSetupAgent {
   private readonly logger = new Logger(GitSetupAgent.name);
-  private llm: ChatGroq | ChatOpenAI;
 
   constructor(
     private gitTools: GitTools,
     private configService: ConfigService,
     private aiService: AIService,
-  ) {
-    this.llm = this.aiService.getLLM();
+  ) {}
+
+  private getModal() {
+    return new ChatGroq({
+      apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
+      model: 'llama-3.1-8b-instant',
+      temperature: 0.1,
+    });
   }
 
   async run(branch: string, repoPath?: string) {
     this.logger.log(`🔧 GitSetupAgent: branch=${branch}`);
 
     const agent = createAgent({
-      model: this.llm,
+      model: this.getModal(),
       tools: [
         this.gitTools.checkoutMain(repoPath),
         this.gitTools.createBranch(repoPath),

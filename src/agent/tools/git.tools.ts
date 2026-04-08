@@ -8,7 +8,7 @@ import { AIService } from 'src/ai/ai.service';
 export class GitTools {
   constructor(
     private gitService: GitService,
-    private groqService: AIService,
+    private aiService: AIService,
   ) {}
 
   checkoutMain(repoPath?: string) {
@@ -71,7 +71,7 @@ export class GitTools {
     return tool(
       async ({ filePath, issues }) => {
         const content = this.gitService.readFile(filePath, repoPath);
-        const fixed = await this.groqService.fixFile(filePath, content, issues);
+        const fixed = await this.aiService.fixFile(filePath, content, issues);
         if (!fixed) return 'FAILED';
         this.gitService.writeFile(filePath, fixed, repoPath);
         return `FIXED: ${filePath}`;

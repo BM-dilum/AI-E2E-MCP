@@ -6,6 +6,7 @@ import { GitSetupAgent } from './agents/git-setup.agent';
 import { GithubFixAgent } from './agents/github-fix.agent';
 import { GithubReviewAgent } from './agents/github-review.agent';
 import { GitFixAgent } from './agents/git-fix-agent';
+import { GithubService } from 'src/github/github.service';
 
 export interface GeneratedFileSummary {
   path: string;
@@ -23,6 +24,7 @@ export class AgentService {
     private githubFixAgent: GithubFixAgent,
     private groqService: GroqService,
     private gitService: GitService,
+    private githubService: GithubService,
   ) {}
 
   //helper function
@@ -89,14 +91,29 @@ export class AgentService {
 
     // Stage 4b: Fix loop — only if needed
     if (!reviewResult.includes('approved')) {
-      await this.githubFixAgent.run(plan.branch, prNumber, repoPath);
+      const { inline, general } =
+        await this.githubService.getAllComments(prNumber);
+
+      this.logger.log(
+        `📋 Found ${inline.length} inline, ${general.length} general comments`,
+      );
+
+      await this.githubFixAgent.run(
+        plan.branch,
+        prNumber,
+        {
+          inline,
+          general,
+        },
+        repoPath,
+      );
     }
 
     return { success: true };
   }
 
-  async fixAndMerge(prNumber: number, branch: string, repoPath?: string) {
-    await this.githubFixAgent.run(branch, prNumber, repoPath);
-    return { success: true };
-  }
+  // async fixAndMerge(prNumber: number, branch: string, repoPath?: string) {
+  //   await this.githubFixAgent.run(branch, prNumber, repoPath);
+  //   return { success: true };
+  // }
 }

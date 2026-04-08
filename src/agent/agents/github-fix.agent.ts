@@ -23,13 +23,33 @@ export class GithubFixAgent {
     });
   }
 
-  async run(branch: string, prNumber: number, repoPath?: string) {
+  async run(
+    branch: string,
+    prNumber: number,
+    existingComments: { inline: any[]; general: any[] },
+    repoPath?: string,
+  ) {
     this.logger.log(`🔁 GithubFixAgent: branch=${branch}`);
+
+    // build context from already-fetched comments
+    const commentsContext = JSON.stringify(
+      {
+        total: existingComments.inline.length + existingComments.general.length,
+        files: [...new Set(existingComments.inline.map((c) => c.path))],
+        inline: existingComments.inline.map((c) => ({
+          path: c.path,
+          body: c.body,
+        })),
+        general: existingComments.general.map((c) => ({ body: c.body })),
+      },
+      null,
+      2,
+    );
 
     const agent = createAgent({
       model: this.getModal(),
       tools: [
-        this.githubTools.getComments(), // 6 tools — fix loop
+        // this.githubTools.getComments(), // 6 tools — fix loop
         this.githubTools.fixFile(repoPath),
         this.githubTools.runTests(repoPath),
         this.githubTools.commitAndPush(repoPath),
@@ -38,22 +58,28 @@ export class GithubFixAgent {
         // this.githubTools.mergePR(),
       ],
       systemPrompt: `
-      The PR number is ${prNumber}. The branch is ${branch}.
-      Always use prNumber=${prNumber} for every tool call. Never use any other PR number.
-      ALWAYS FOLLOW STEPS IN ORDER
+      You are a GitHub fix agent for PR #${prNumber} on branch ${branch}.
 
-      Steps in order
+      CodeRabbit comments are already provided below — do NOT fetch them.
+      Use the EXACT file paths listed in the comments.
 
-        1. get_comments with prNumber=${prNumber}
-        2.If NO_COMMENTS → merge_pr with prNumber=${prNumber} → stop
-        3.fix_file for each file listed in comments using exact file paths
-        4. run_tests — never push if failing
-        5. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
-        6. resolve_comments with prNumber=${prNumber}
-        7. trigger_review with prNumber=${prNumber}
-        8.wait_for_review with prNumber=${prNumber}
-        8. If approved → merge_pr with prNumber=${prNumber} → stop
-        9. Repeat max 3 times
+      COMMENTS:
+      ${commentsContext}
+
+      Steps — follow in order:
+      1. fix_file for each file in the comments above
+      2. run_tests — if failing, fix again max 3 times, never push if failing
+      3. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
+      4. resolve_comments prNumber=${prNumber}
+      5. trigger_and_wait_for_review prNumber=${prNumber}
+      6. If APPROVED or timed_out → stop, return: DONE prNumber=${prNumber}
+      7. If COMMENTED or CHANGES_REQUESTED → stop, return: NEEDS_REVIEW prNumber=${prNumber}
+
+      RULES:
+      - First tool call MUST be fix_file — not anything else
+      - Use exact file paths from comments above
+      - Always use prNumber=${prNumber}
+      - Never call a tool that is not in your tools list
       `,
       middleware: [],
     });

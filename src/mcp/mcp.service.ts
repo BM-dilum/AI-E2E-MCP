@@ -14,8 +14,8 @@ export class McpService {
     switch (name) {
       case 'ship_feature':
         return this.agentService.shipFeature(args.spec);
-      case 'fix_and_merge':
-        return this.agentService.fixAndMerge(args.prNumber, args.branch);
+      // case 'fix_and_merge':
+      //   return this.agentService.fixAndMerge(args.prNumber, args.branch);
       default:
         throw new BadRequestException(`Unknown tool: ${name}`);
     }

@@ -5,22 +5,20 @@ import { ConfigService } from '@nestjs/config';
 import { GithubTools } from '../tools/github.tools';
 import { ChatGroq } from '@langchain/groq';
 import { GitTools } from '../tools/git.tools';
+import { ChatOpenAI } from '@langchain/openai';
+import { AIService } from 'src/ai/ai.service';
 
 @Injectable()
 export class GithubFixAgent {
   private readonly logger = new Logger(GithubFixAgent.name);
+  private llm: ChatGroq | ChatOpenAI;
 
   constructor(
     private githubTools: GithubTools,
     private configService: ConfigService,
-  ) {}
-
-  private getModal() {
-    return new ChatGroq({
-      apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
-      model: 'llama-3.1-8b-instant',
-      temperature: 0.1,
-    });
+    private aiService: AIService,
+  ) {
+    this.llm = aiService.getLLM();
   }
 
   async run(
@@ -47,7 +45,7 @@ export class GithubFixAgent {
     );
 
     const agent = createAgent({
-      model: this.getModal(),
+      model: this.llm,
       tools: [
         // this.githubTools.getComments(), // 6 tools — fix loop
         this.githubTools.fixFile(repoPath),

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { GitService } from 'src/github/git.service';
-import { GroqService } from 'src/groq/groq.service';
+import { AIService } from 'src/ai/ai.service';
 import { GitSetupAgent } from './agents/git-setup.agent';
 import { GithubFixAgent } from './agents/github-fix.agent';
 import { GithubReviewAgent } from './agents/github-review.agent';
@@ -22,7 +22,7 @@ export class AgentService {
     private gitFixAgent: GitFixAgent,
     private githubReviewAgent: GithubReviewAgent,
     private githubFixAgent: GithubFixAgent,
-    private groqService: GroqService,
+    private groqService: AIService,
     private gitService: GitService,
     private githubService: GithubService,
   ) {}

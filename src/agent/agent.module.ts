@@ -3,9 +3,9 @@ import { AgentService } from './agent.service';
 import { AgentController } from './agent.controller';
 import { GitService } from 'src/github/git.service';
 import { GithubService } from 'src/github/github.service';
-import { GroqService } from 'src/groq/groq.service';
+import { AIService } from 'src/ai/ai.service';
 import { GithubModule } from 'src/github/github.module';
-import { GroqModule } from 'src/groq/groq.module';
+import { AIModule } from 'src/ai/ai.module';
 import { GitSetupAgent } from './agents/git-setup.agent';
 import { GithubFixAgent } from './agents/github-fix.agent';
 import { GithubReviewAgent } from './agents/github-review.agent';
@@ -14,7 +14,7 @@ import { GitFixAgent } from './agents/git-fix-agent';
 import { GitTools } from './tools/git.tools';
 
 @Module({
-  imports: [GithubModule, GroqModule],
+  imports: [GithubModule, AIModule],
   controllers: [AgentController],
   providers: [
     AgentService,

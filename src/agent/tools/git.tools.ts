@@ -2,13 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { tool } from 'langchain';
 import { z } from 'zod';
 import { GitService } from 'src/github/git.service';
-import { GroqService } from 'src/groq/groq.service';
+import { AIService } from 'src/ai/ai.service';
 
 @Injectable()
 export class GitTools {
   constructor(
     private gitService: GitService,
-    private groqService: GroqService,
+    private groqService: AIService,
   ) {}
 
   checkoutMain(repoPath?: string) {

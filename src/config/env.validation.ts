@@ -5,7 +5,9 @@ import {
   IsNumber,
   IsOptional,
   validateSync,
+  IsEnum,
 } from 'class-validator';
+import { Providers } from 'src/ai/ai.service';
 
 export class EnvironmentVariables {
   @IsString()
@@ -27,6 +29,10 @@ export class EnvironmentVariables {
   @IsNumber()
   @IsOptional()
   PORT: number = 3000;
+
+  @IsEnum(Providers)
+  @IsOptional()
+  AI_PROVIDER: Providers = Providers.openai;
 }
 
 export function validate(config: Record<string, unknown>) {

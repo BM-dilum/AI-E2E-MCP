@@ -1,24 +1,22 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Provider } from '@nestjs/common';
 import { createAgent } from 'langchain';
 import { ChatGroq } from '@langchain/groq';
 import { ConfigService } from '@nestjs/config';
 import { GitTools } from '../tools/git.tools';
+import { AIService, Providers } from 'src/ai/ai.service';
+import { ChatOpenAI } from '@langchain/openai';
 
 @Injectable()
 export class GitFixAgent {
   private readonly logger = new Logger(GitFixAgent.name);
+  private llm: ChatGroq | ChatOpenAI;
 
   constructor(
     private gitTools: GitTools,
     private configService: ConfigService,
-  ) {}
-
-  private getModel() {
-    return new ChatGroq({
-      apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
-      model: 'llama-3.3-70b-versatile',
-      temperature: 0.1,
-    });
+    private aiService: AIService,
+  ) {
+    this.llm = this.aiService.getLLM();
   }
 
   async run(
@@ -30,7 +28,7 @@ export class GitFixAgent {
     this.logger.log(`🧪 GitFixAgent: branch=${branch}`);
 
     const agent = createAgent({
-      model: this.getModel(),
+      model: this.llm,
       tools: [
         this.gitTools.installDeps(),
         this.gitTools.runTests(repoPath),

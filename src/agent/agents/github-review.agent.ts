@@ -1,26 +1,22 @@
+import { ChatGroq } from '@langchain/groq';
+import { ChatOpenAI } from '@langchain/openai';
 import { Injectable, Logger } from '@nestjs/common';
 import { createAgent } from 'langchain';
-import { ChatGroq } from '@langchain/groq';
-import { ConfigService } from '@nestjs/config';
-import { GithubTools } from '../tools/github.tools';
+import { AIService } from 'src/ai/ai.service';
 import { GithubService } from 'src/github/github.service';
+import { GithubTools } from '../tools/github.tools';
 
 @Injectable()
 export class GithubReviewAgent {
   private readonly logger = new Logger(GithubReviewAgent.name);
+  private llm: ChatGroq | ChatOpenAI;
 
   constructor(
     private githubTools: GithubTools,
     private githubService: GithubService,
-    private configService: ConfigService,
-  ) {}
-
-  private getModel() {
-    return new ChatGroq({
-      apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
-      model: 'llama-3.1-8b-instant',
-      temperature: 0.1,
-    });
+    private aiService: AIService,
+  ) {
+    this.llm = this.aiService.getLLM();
   }
 
   async run(branch: string, prTitle: string) {
@@ -28,7 +24,7 @@ export class GithubReviewAgent {
 
     // Step 1: Agent opens PR only
     const openPRAgent = createAgent({
-      model: this.getModel(),
+      model: this.llm,
       tools: [this.githubTools.openPR()],
       systemPrompt: `
       You have exactly 1 tool: open_pr.

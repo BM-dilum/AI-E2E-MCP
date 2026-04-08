@@ -3,7 +3,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { GithubModule } from './github/github.module';
-import { GroqModule } from './groq/groq.module';
+import { AIModule } from './ai/ai.module';
 import { AgentModule } from './agent/agent.module';
 import { McpModule } from './mcp/mcp.module';
 import { WebhookModule } from './webhook/webhook.module';
@@ -13,7 +13,7 @@ import { validate } from './config/env.validation';
   imports: [
     ConfigModule.forRoot({ isGlobal: true, validate }),
     GithubModule,
-    GroqModule,
+    AIModule,
     AgentModule,
     McpModule,
     WebhookModule,

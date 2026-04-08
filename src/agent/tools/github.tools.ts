@@ -3,14 +3,14 @@ import { tool } from 'langchain';
 import { z } from 'zod';
 import { GitService } from 'src/github/git.service';
 import { GithubService } from 'src/github/github.service';
-import { GroqService } from 'src/groq/groq.service';
+import { AIService } from 'src/ai/ai.service';
 
 @Injectable()
 export class GithubTools {
   constructor(
     private githubService: GithubService,
     private gitService: GitService,
-    private groqService: GroqService,
+    private aiService: AIService,
   ) {}
 
   openPR() {
@@ -60,7 +60,7 @@ export class GithubTools {
     return tool(
       async ({ filePath, issues }) => {
         const content = this.gitService.readFile(filePath, repoPath);
-        const fixed = await this.groqService.fixFile(filePath, content, issues);
+        const fixed = await this.aiService.fixFile(filePath, content, issues);
         if (!fixed) return 'FAILED';
         this.gitService.writeFile(filePath, fixed, repoPath);
         return `FIXED: ${filePath}`;

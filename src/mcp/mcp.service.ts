@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { AgentService } from 'src/agent/agent.service';
-import { GroqService } from 'src/groq/groq.service';
+import { AIService } from 'src/ai/ai.service';
 
 @Injectable()
 export class McpService {

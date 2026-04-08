@@ -1,5 +1,3 @@
-import { ChatGroq } from '@langchain/groq';
-import { ChatOpenAI } from '@langchain/openai';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Groq from 'groq-sdk';
@@ -19,98 +17,28 @@ export interface SprintPlan {
   files: GeneratedFiles[];
 }
 
-export enum Providers {
-  openai = 'openai',
-  groq = 'groq',
-}
-
 @Injectable()
 export class AIService {
-  private groq: Groq;
   private openAI: OpenAI;
-  private provider: Providers;
-  private llm: ChatGroq | ChatOpenAI; // used for langchain
   private readonly logger = new Logger(AIService.name);
 
   constructor(private configService: ConfigService) {
-    const providerKey = this.configService.getOrThrow<string>('AI_PROVIDER');
-    this.provider = Providers[providerKey];
-    if (!this.provider) {
-      throw new Error(`Unsupported AI_PROVIDER: ${providerKey}`);
-    }
-
-    this.logger.log(`🤖 AI Provider: ${this.provider}`);
-
-    if (this.provider === Providers.openai) {
-      this.openAI = new OpenAI({
-        apiKey: this.configService.getOrThrow('OPENAI_API_KEY'),
-      });
-    } else {
-      this.groq = new Groq({
-        apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
-      });
-    }
-    this.llm = this.initLLM();
-  }
-
-  private initLLM(): ChatGroq | ChatOpenAI {
-    if (this.provider === Providers.groq) {
-      return new ChatGroq({
-        apiKey: this.configService.getOrThrow('GROQ_API_KEY'),
-        model: 'llama-3.3-70b-versatile',
-        temperature: 0.1,
-      });
-    }
-    if (this.provider === Providers.openai) {
-      return new ChatOpenAI({
-        apiKey: this.configService.getOrThrow('OPENAI_API_KEY'),
-        model: 'gpt-5-mini',
-        temperature: 1,
-      });
-    }
-    throw new Error(`Unsupported AI_PROVIDER: ${this.provider}`);
-  }
-
-  getLLM(): ChatGroq | ChatOpenAI {
-    return this.llm;
-  }
-
-  private async complete(
-    messages: { role: 'user' | 'assistant' | 'system'; content: string }[],
-    options: {
-      max_completion_tokens?: number;
-      temperature?: number;
-    } = {},
-  ): Promise<string> {
-    const { max_completion_tokens = 1024, temperature = 1 } = options;
-    if (this.provider === Providers.groq) {
-      const response = await this.groq.chat.completions.create({
-        model: 'llama-3.1-8b-instant',
-        max_completion_tokens,
-        temperature,
-        messages: messages,
-      });
-
-      return response.choices[0].message.content ?? '';
-    } else {
-      const response = await this.openAI.chat.completions.create({
-        model: 'gpt-5-mini',
-        max_completion_tokens,
-        temperature,
-        messages: messages,
-      });
-
-      return response.choices[0].message.content ?? '';
-    }
+    this.openAI = new OpenAI({
+      apiKey: this.configService.getOrThrow('OPENAI_API_KEY'),
+    });
   }
 
   async planFromSpec(spec: string): Promise<SprintPlan> {
     this.logger.log('Planning from spec...');
 
-    let messages = [
-      {
-        role: 'system' as const,
-        content: `You are a project planner.
+    const response = await this.openAI.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      max_completion_tokens: 1024,
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content: `You are a project planner.
                 Read the spec and extract key metadata.
                 Return ONLY valid JSON — no markdown, no backticks.
 
@@ -121,14 +49,15 @@ export class AIService {
                 "commitMessage": "feat: short commit message",
                 "filePaths": ["contracts/Name.sol", "test/Name.test.ts", "hardhat.config.ts", "package.json"]
                 }`,
-      },
-      {
-        role: 'user' as const,
-        content: spec,
-      },
-    ];
+        },
+        {
+          role: 'user',
+          content: spec,
+        },
+      ],
+    });
 
-    const text = await this.complete(messages);
+    const text = response.choices[0].message.content ?? '';
     const cleaned = text
       .replace(/^```[\w]*\n/, '')
       .replace(/\n```$/, '')
@@ -162,10 +91,14 @@ export class AIService {
 
     const allFiles = plan.filePaths.join('\n') ?? '';
 
-    let messages = [
-      {
-        role: 'system' as const,
-        content: `You are an expert software engineer.
+    const response = await this.openAI.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      max_completion_tokens: 4096,
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert software engineer.
                     Generate complete production ready code for the requested file.
                     CRITICAL RULES:
                     - Return ONLY the raw file content
@@ -179,10 +112,10 @@ export class AIService {
                     - Never add placeholder comments or TODOs
                     - Full working implementation only
                     `,
-      },
-      {
-        role: 'user' as const,
-        content: `SPEC: 
+        },
+        {
+          role: 'user',
+          content: `SPEC: 
                     ${spec}
 
                     PROJECT PLAN:
@@ -197,12 +130,11 @@ export class AIService {
                     return only the completed file content for ${filePath}
           
           `,
-      },
-    ];
-
-    const content = await this.complete(messages, {
-      max_completion_tokens: 4096,
+        },
+      ],
     });
+
+    const content = response.choices[0].message.content ?? '';
     return content
       .replace(/^```[\w]*\n/, '')
       .replace(/\n```$/, '')
@@ -217,10 +149,14 @@ export class AIService {
   ): Promise<string | null> {
     this.logger.log(`Fixing ${filePath}`);
 
-    let messages = [
-      {
-        role: 'system' as const,
-        content: `You are an expert software engineer.
+    const response = await this.openAI.chat.completions.create({
+      model: 'gpt-5.4-mini',
+      max_completion_tokens: 4096,
+      temperature: 0.1,
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert software engineer.
                     Fix the provided issues of the provided file 
                     CRITICAL RULES:
                     - Return ONLY the raw file content
@@ -230,10 +166,10 @@ export class AIService {
                     - Start with the first line of code
                     - End with the last line of code                   
                     `,
-      },
-      {
-        role: 'user' as const,
-        content: ` FILE PATH: ${filePath}
+        },
+        {
+          role: 'user',
+          content: ` FILE PATH: ${filePath}
 
           CURRENT FILE CONTENT: 
           ${fileContent}
@@ -241,12 +177,11 @@ export class AIService {
           ISSUES TO FIX:
           ${issues}
           `,
-      },
-    ];
-
-    const content = await this.complete(messages, {
-      max_completion_tokens: 4096,
+        },
+      ],
     });
+
+    const content = response.choices[0].message.content;
     if (!content) return null;
 
     return content

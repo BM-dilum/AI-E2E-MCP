@@ -11,14 +11,18 @@ import { AIService } from 'src/ai/ai.service';
 @Injectable()
 export class GithubFixAgent {
   private readonly logger = new Logger(GithubFixAgent.name);
-  private llm: ChatGroq | ChatOpenAI;
 
   constructor(
     private githubTools: GithubTools,
     private configService: ConfigService,
-    private aiService: AIService,
-  ) {
-    this.llm = aiService.getLLM();
+  ) {}
+
+  private getModal() {
+    return new ChatOpenAI({
+      apiKey: this.configService.getOrThrow('OPENAI_API_KEY'),
+      model: 'gpt-5.4-mini',
+      temperature: 0.1,
+    });
   }
 
   async run(
@@ -45,7 +49,7 @@ export class GithubFixAgent {
     );
 
     const agent = createAgent({
-      model: this.llm,
+      model: this.getModal(),
       tools: [
         // this.githubTools.getComments(), // 6 tools — fix loop
         this.githubTools.fixFile(repoPath),

@@ -44,7 +44,7 @@ export class AIService {
 
                 Return this exact structure:
                 {
-                "branch": "feat/kebab-case-name",
+                "branch": "feat/kebab-case-name", only take the branch name from the provided spec. DO NOT halucinate a branch name if it's not provided in the spec.
                 "prTitle": "Human Readable PR Title",
                 "commitMessage": "feat: short commit message",
                 "filePaths": ["contracts/Name.sol", "test/Name.test.ts", "hardhat.config.ts", "package.json"]

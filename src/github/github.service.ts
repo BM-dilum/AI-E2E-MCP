@@ -119,31 +119,39 @@ export class GithubService {
    * Get all unresolved inline CodeRabbit comments for a pull request.
    */
   async getInlineComments(prNumber: number): Promise<Comment[]> {
-    const { data } = await this.octokit.rest.pulls.listReviewComments({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber,
-    });
+    const reviewComments = (await this.octokit.paginate(
+      this.octokit.rest.pulls.listReviewComments,
+      {
+        owner: this.owner,
+        repo: this.repo,
+        pull_number: prNumber,
+        per_page: 100,
+      },
+    )) as any[];
 
-    const { data: reviews } = await this.octokit.rest.pulls.listReviews({
-      owner: this.owner,
-      repo: this.repo,
-      pull_number: prNumber,
-    });
+    const reviews = (await this.octokit.paginate(
+      this.octokit.rest.pulls.listReviews,
+      {
+        owner: this.owner,
+        repo: this.repo,
+        pull_number: prNumber,
+        per_page: 100,
+      },
+    )) as any[];
 
     const unresolvedReviewIds = new Set(
       reviews
-        .filter((review) => review.user?.login.includes('coderabbit'))
+        .filter((review) => review.user?.login?.includes('coderabbit'))
         .filter((review) => review.state !== 'DISMISSED')
         .map((review) => review.id),
     );
 
     const comments = this.dedupeInlineComments(
-      data.filter((c) => {
-        const isCoderabbit = c.user?.login.includes('coderabbit');
+      reviewComments.filter((c) => {
+        const isCoderabbit = c.user?.login?.includes('coderabbit');
         const isUnresolved = c.pull_request_review_id
           ? unresolvedReviewIds.has(c.pull_request_review_id)
-          : true;
+          : false;
         return isCoderabbit && isUnresolved;
       }) as Comment[],
     );

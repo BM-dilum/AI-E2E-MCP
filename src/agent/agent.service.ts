@@ -30,6 +30,8 @@ export class AgentService {
   /**
    * Extracts exported declarations from a file's content.
    *
+   * This currently returns only lines that begin with export, interface, type, or enum.
+   *
    * @param content - The full file content to inspect.
    * @returns A newline-delimited string containing exported declarations.
    */
@@ -47,7 +49,7 @@ export class AgentService {
   }
 
   /**
-   * Determines whether a review result indicates approval.
+   * Determines whether a review result indicates approval or a terminal timeout.
    *
    * @param reviewResult - The raw review result string.
    * @returns True when the review result begins with "approved" or "timed_out".

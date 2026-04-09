@@ -41,6 +41,13 @@ export class GithubService {
   }
 
   /**
+   * Check whether a login belongs to the trusted CodeRabbit bot identity.
+   */
+  private isCodeRabbitLogin(login?: string | null): boolean {
+    return login === 'coderabbitai[bot]' || login === 'coderabbitai';
+  }
+
+  /**
    * Remove duplicate inline comments using path, line, and normalized body as the uniqueness key.
    */
   private dedupeInlineComments<T extends Comment>(comments: T[]): T[] {
@@ -129,29 +136,50 @@ export class GithubService {
       },
     )) as any[];
 
-    const reviews = (await this.octokit.paginate(
-      this.octokit.rest.pulls.listReviews,
+    const threadsResult: any = await this.octokit.graphql(
+      `
+        query getThreads($owner: String!, $repo: String!, $prNumber: Int!) {
+          repository(owner: $owner, name: $repo) {
+            pullRequest(number: $prNumber) {
+              reviewThreads(first: 100) {
+                nodes {
+                  id
+                  isResolved
+                  comments(first: 50) {
+                    nodes {
+                      databaseId
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      `,
       {
         owner: this.owner,
         repo: this.repo,
-        pull_number: prNumber,
-        per_page: 100,
+        prNumber,
       },
-    )) as any[];
-
-    const unresolvedReviewIds = new Set(
-      reviews
-        .filter((review) => review.user?.login?.includes('coderabbit'))
-        .filter((review) => review.state !== 'DISMISSED')
-        .map((review) => review.id),
     );
+
+    const unresolvedCommentIds = new Set<number>();
+    const threads = threadsResult?.repository?.pullRequest?.reviewThreads?.nodes ?? [];
+
+    for (const thread of threads) {
+      if (!thread.isResolved && thread.comments?.nodes?.length > 0) {
+        for (const comment of thread.comments.nodes) {
+          if (typeof comment.databaseId === 'number') {
+            unresolvedCommentIds.add(comment.databaseId);
+          }
+        }
+      }
+    }
 
     const comments = this.dedupeInlineComments(
       reviewComments.filter((c) => {
-        const isCoderabbit = c.user?.login?.includes('coderabbit');
-        const isUnresolved = c.pull_request_review_id
-          ? unresolvedReviewIds.has(c.pull_request_review_id)
-          : false;
+        const isCoderabbit = this.isCodeRabbitLogin(c.user?.login);
+        const isUnresolved = unresolvedCommentIds.has(c.id);
         return isCoderabbit && isUnresolved;
       }) as Comment[],
     );
@@ -175,7 +203,7 @@ export class GithubService {
     )) as any[];
 
     const dedupedComments = this.dedupeGeneralComments(
-      comments.filter((c) => c.user?.login.includes('coderabbit')),
+      comments.filter((c) => this.isCodeRabbitLogin(c.user?.login)),
     );
 
     this.logger.log(`Found ${dedupedComments.length} general CodeRabbit comments`);
@@ -334,7 +362,7 @@ export class GithubService {
     });
 
     const existingCoderabbit = existing.filter((r) =>
-      r.user?.login.includes('coderabbit'),
+      this.isCodeRabbitLogin(r.user?.login),
     );
 
     if (existingCoderabbit.length > 0) {
@@ -352,7 +380,7 @@ export class GithubService {
       });
 
       const coderabbitReviews = reviews.filter(
-        (r) => r.user?.login.includes('coderabbit') && r.id > lastReviewId,
+        (r) => this.isCodeRabbitLogin(r.user?.login) && r.id > lastReviewId,
       );
 
       if (coderabbitReviews.length > 0) {

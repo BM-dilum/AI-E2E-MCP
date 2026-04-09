@@ -27,7 +27,12 @@ export class AgentService {
     private githubService: GithubService,
   ) {}
 
-  //helper function
+  /**
+   * Extracts exported declarations from a file's content.
+   *
+   * @param content - The full file content to inspect.
+   * @returns A newline-delimited string containing exported declarations.
+   */
   private extractExports(content: string): string {
     return content
       .split('\n')
@@ -41,14 +46,34 @@ export class AgentService {
       .join('\n');
   }
 
+  /**
+   * Determines whether a review result indicates approval.
+   *
+   * @param reviewResult - The raw review result string.
+   * @returns True when the review result begins with "approved".
+   */
   private isApprovedReviewResult(reviewResult: string): boolean {
     return /^approved\b/i.test(reviewResult.trim());
   }
 
+  /**
+   * Determines whether a fix result indicates completion.
+   *
+   * @param result - The raw fix result string.
+   * @returns True when the fix result begins with "done".
+   */
   private isDoneFixResult(result: string): boolean {
     return /^done\b/i.test(result.trim());
   }
 
+  /**
+   * Ships a feature from a specification by planning, generating files, running fixes,
+   * and handling review feedback.
+   *
+   * @param spec - The feature specification to implement.
+   * @param repoPath - Optional repository path to operate on.
+   * @returns A result object indicating success or failure and related metadata.
+   */
   async shipFeature(spec: string, repoPath?: string) {
     this.logger.log('🚀 shipFeature starting');
 

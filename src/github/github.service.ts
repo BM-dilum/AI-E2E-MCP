@@ -33,13 +33,17 @@ export class GithubService {
     this.repo = this.configService.getOrThrow('GITHUB_REPO');
   }
 
+  /**
+   * Normalize a comment body for comparison by collapsing whitespace and trimming.
+   */
   private normalizeCommentBody(body?: string | null): string {
     return (body ?? '').replace(/\s+/g, ' ').trim();
   }
 
-  private dedupeInlineComments<T extends Comment>(
-    comments: T[],
-  ): T[] {
+  /**
+   * Remove duplicate inline comments using path, line, and normalized body as the uniqueness key.
+   */
+  private dedupeInlineComments<T extends Comment>(comments: T[]): T[] {
     const unique = new Map<string, T>();
 
     for (const comment of comments) {
@@ -54,6 +58,9 @@ export class GithubService {
     return [...unique.values()];
   }
 
+  /**
+   * Remove duplicate general comments using the normalized body as the uniqueness key.
+   */
   private dedupeGeneralComments<T extends { body?: string | null; id: number }>(
     comments: T[],
   ): T[] {
@@ -67,7 +74,9 @@ export class GithubService {
     return [...unique.values()];
   }
 
-  //open new PR
+  /**
+   * Open a new pull request from the given branch.
+   */
   async openPR(
     branch: string,
     title: string,
@@ -75,7 +84,6 @@ export class GithubService {
   ): Promise<PullRequest> {
     this.logger.log(`Openning PR: ${title}`);
 
-    // get deafult branch
     const { data: repoData } = await this.octokit.rest.repos.get({
       owner: this.owner,
       repo: this.repo,
@@ -94,7 +102,9 @@ export class GithubService {
     return pr as PullRequest;
   }
 
-  //get PR details
+  /**
+   * Fetch pull request details by PR number.
+   */
   async getPR(prNumber: number): Promise<PullRequest> {
     const { data } = await this.octokit.rest.pulls.get({
       owner: this.owner,
@@ -105,7 +115,9 @@ export class GithubService {
     return data as PullRequest;
   }
 
-  //get all unresolved coderabbit pr comments
+  /**
+   * Get all unresolved inline CodeRabbit comments for a pull request.
+   */
   async getInlineComments(prNumber: number): Promise<Comment[]> {
     const { data } = await this.octokit.rest.pulls.listReviewComments({
       owner: this.owner,
@@ -121,7 +133,9 @@ export class GithubService {
     return comments;
   }
 
-  //get all coderabbit comments (nitpicks)
+  /**
+   * Get all general CodeRabbit comments for a pull request.
+   */
   async getGeneralComments(prNumber: number): Promise<any[]> {
     const { data } = await this.octokit.rest.issues.listComments({
       owner: this.owner,
@@ -137,14 +151,18 @@ export class GithubService {
     return comments;
   }
 
-  //get all Coderabbit comments (inline + general)
+  /**
+   * Get all CodeRabbit comments, including inline and general comments.
+   */
   async getAllComments(prNmber: number) {
     const inline = await this.getInlineComments(prNmber);
     const general = await this.getGeneralComments(prNmber);
     return { inline, general };
   }
 
-  //get thread IDs resolving via GraphQL
+  /**
+   * Get unresolved review thread IDs keyed by the first review comment database ID.
+   */
   async getThreadIds(prNumber: number): Promise<Map<number, string>> {
     const threadMap = new Map<number, string>();
 
@@ -186,7 +204,9 @@ export class GithubService {
     return threadMap;
   }
 
-  //reply to inline comments
+  /**
+   * Reply to an inline review comment.
+   */
   async replyToComment(prNumber: number, commentId: number, body: string) {
     await this.octokit.rest.pulls.createReplyForReviewComment({
       owner: this.owner,
@@ -199,7 +219,9 @@ export class GithubService {
     this.logger.log(`Replied to comment ${commentId}`);
   }
 
-  //resolve a thread via GraphQL
+  /**
+   * Resolve a review thread by its GraphQL thread ID.
+   */
   async resolveThread(threadId: string) {
     await this.octokit.graphql(
       `
@@ -217,7 +239,9 @@ export class GithubService {
     this.logger.log(`✅ Resolved thread ${threadId}`);
   }
 
-  //resolve all comments for fixed files
+  /**
+   * Resolve comments associated with files that have been fixed.
+   */
   async resolveComments(
     prNumber: number,
     comments: Comment[],
@@ -247,7 +271,9 @@ export class GithubService {
     }
   }
 
-  //trigger coderabbit review
+  /**
+   * Trigger a new CodeRabbit review on the pull request.
+   */
   async triggerReview(prNumber: number) {
     await this.octokit.rest.issues.createComment({
       owner: this.owner,
@@ -259,7 +285,9 @@ export class GithubService {
     this.logger.log(`Triggered CodeRabbit review for PR #${prNumber}`);
   }
 
-  //wait for CodeRabbit to submit a review
+  /**
+   * Wait for CodeRabbit to submit a new review and return its state.
+   */
   async waitForReview(prNumber: number, timeoutMs = 600000): Promise<string> {
     this.logger.log('⏳ Waiting for CodeRabbit review...');
 
@@ -268,7 +296,6 @@ export class GithubService {
     let attempts = 0;
     let lastReviewId = 0;
 
-    // get current latest review ID to detect NEW reviews
     const { data: existing } = await this.octokit.rest.pulls.listReviews({
       owner: this.owner,
       repo: this.repo,
@@ -283,7 +310,6 @@ export class GithubService {
       lastReviewId = existingCoderabbit[existingCoderabbit.length - 1].id;
     }
 
-    //poll for new review
     while (attempts < maxAttempts) {
       await new Promise((r) => setTimeout(r, interval));
       attempts++;
@@ -310,7 +336,9 @@ export class GithubService {
     return 'timed_out';
   }
 
-  // merge the PR
+  /**
+   * Merge the pull request.
+   */
   async mergePR(prNumber: number) {
     // await this.octokit.rest.pulls.merge({
     //   owner: this.owner,
@@ -321,6 +349,9 @@ export class GithubService {
     this.logger.log(`✅ Merged PR #${prNumber}`);
   }
 
+  /**
+   * Post a general comment on the pull request.
+   */
   async postComment(prNumber: number, body: string) {
     await this.octokit.rest.issues.createComment({
       owner: this.owner,
@@ -330,6 +361,9 @@ export class GithubService {
     });
   }
 
+  /**
+   * Get a branch by name.
+   */
   async getBranch(branch: string) {
     return this.octokit.rest.repos.getBranch({
       owner: this.owner,

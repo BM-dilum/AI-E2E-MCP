@@ -164,18 +164,22 @@ export class GithubService {
    * Get all general CodeRabbit comments for a pull request.
    */
   async getGeneralComments(prNumber: number): Promise<any[]> {
-    const { data } = await this.octokit.rest.issues.listComments({
-      owner: this.owner,
-      repo: this.repo,
-      issue_number: prNumber,
-    });
+    const comments = (await this.octokit.paginate(
+      this.octokit.rest.issues.listComments,
+      {
+        owner: this.owner,
+        repo: this.repo,
+        issue_number: prNumber,
+        per_page: 100,
+      },
+    )) as any[];
 
-    const comments = this.dedupeGeneralComments(
-      data.filter((c) => c.user?.login.includes('coderabbit')),
+    const dedupedComments = this.dedupeGeneralComments(
+      comments.filter((c) => c.user?.login.includes('coderabbit')),
     );
 
-    this.logger.log(`Found ${comments.length} general CodeRabbit comments`);
-    return comments;
+    this.logger.log(`Found ${dedupedComments.length} general CodeRabbit comments`);
+    return dedupedComments;
   }
 
   /**

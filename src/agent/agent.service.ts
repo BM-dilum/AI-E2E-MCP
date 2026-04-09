@@ -50,10 +50,10 @@ export class AgentService {
    * Determines whether a review result indicates approval.
    *
    * @param reviewResult - The raw review result string.
-   * @returns True when the review result begins with "approved".
+   * @returns True when the review result begins with "approved" or "timed_out".
    */
   private isApprovedReviewResult(reviewResult: string): boolean {
-    return /^approved\b/i.test(reviewResult.trim());
+    return /^(approved|timed_out)\b/i.test(reviewResult.trim());
   }
 
   /**

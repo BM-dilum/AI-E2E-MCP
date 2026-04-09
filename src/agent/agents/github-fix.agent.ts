@@ -25,6 +25,20 @@ export class GithubFixAgent {
     });
   }
 
+  private normalizeResult(output: string): string {
+    const normalized = output.trim();
+
+    if (/^done\b/i.test(normalized)) {
+      return normalized;
+    }
+
+    if (/^needs_review\b/i.test(normalized)) {
+      return normalized;
+    }
+
+    return `NEEDS_REVIEW prNumber=unknown raw=${JSON.stringify(normalized)}`;
+  }
+
   async run(
     branch: string,
     prNumber: number,
@@ -96,7 +110,16 @@ export class GithubFixAgent {
     });
 
     const output = result.messages[result.messages.length - 1].content;
-    this.logger.log(`✅ GithubFixAgent done`);
-    return typeof output === 'string' ? output : JSON.stringify(output);
+    const normalizedOutput = this.normalizeResult(
+      typeof output === 'string' ? output : JSON.stringify(output),
+    );
+
+    if (/^done\b/i.test(normalizedOutput)) {
+      this.logger.log(`✅ GithubFixAgent done: ${normalizedOutput}`);
+    } else {
+      this.logger.warn(`⚠️ GithubFixAgent needs review: ${normalizedOutput}`);
+    }
+
+    return normalizedOutput;
   }
 }

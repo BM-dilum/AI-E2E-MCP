@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { GitService } from 'src/github/git.service';
 import { AIService } from 'src/ai/ai.service';
 import { GitSetupAgent } from './agents/git-setup.agent';
@@ -43,6 +42,10 @@ export class AgentService {
 
   private isApprovedReviewResult(reviewResult: string): boolean {
     return /^approved\b/i.test(reviewResult.trim());
+  }
+
+  private isDoneFixResult(result: string): boolean {
+    return /^done\b/i.test(result.trim());
   }
 
   async shipFeature(spec: string, repoPath?: string) {
@@ -102,7 +105,7 @@ export class AgentService {
         `📋 Found ${inline.length} inline, ${general.length} general comments`,
       );
 
-      await this.githubFixAgent.run(
+      const fixResult = await this.githubFixAgent.run(
         plan.branch,
         prNumber,
         {
@@ -111,9 +114,21 @@ export class AgentService {
         },
         repoPath,
       );
+
+      this.logger.log(`📋 Fix result: ${fixResult}`);
+
+      if (!this.isDoneFixResult(fixResult)) {
+        return {
+          success: false,
+          message: `PR #${prNumber} still needs review`,
+          prNumber,
+          reviewResult,
+          fixResult,
+        };
+      }
     }
 
-    return { success: true };
+    return { success: true, prNumber };
   }
 
   // async fixAndMerge(prNumber: number, branch: string, repoPath?: string) {

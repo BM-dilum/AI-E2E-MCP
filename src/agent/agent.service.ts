@@ -15,6 +15,7 @@ export interface GeneratedFileSummary {
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
+  private readonly maxFixRounds = 3;
 
   constructor(
     private gitSetupAgent: GitSetupAgent,
@@ -98,33 +99,48 @@ export class AgentService {
 
     // Stage 4b: Fix loop — only if needed
     if (!this.isApprovedReviewResult(reviewResult)) {
-      const { inline, general } =
-        await this.githubService.getAllComments(prNumber);
+      for (let round = 1; round <= this.maxFixRounds; round++) {
+        const { inline, general } =
+          await this.githubService.getAllComments(prNumber);
 
-      this.logger.log(
-        `📋 Found ${inline.length} inline, ${general.length} general comments`,
-      );
+        this.logger.log(
+          `📋 Fix round ${round}/${this.maxFixRounds}: found ${inline.length} inline, ${general.length} general comments`,
+        );
 
-      const fixResult = await this.githubFixAgent.run(
-        plan.branch,
-        prNumber,
-        {
-          inline,
-          general,
-        },
-        repoPath,
-      );
+        if (inline.length === 0 && general.length === 0) {
+          return {
+            success: false,
+            message: `PR #${prNumber} still needs review but no CodeRabbit comments were found`,
+            prNumber,
+            reviewResult,
+          };
+        }
 
-      this.logger.log(`📋 Fix result: ${fixResult}`);
-
-      if (!this.isDoneFixResult(fixResult)) {
-        return {
-          success: false,
-          message: `PR #${prNumber} still needs review`,
+        const fixResult = await this.githubFixAgent.run(
+          plan.branch,
           prNumber,
-          reviewResult,
-          fixResult,
-        };
+          {
+            inline,
+            general,
+          },
+          repoPath,
+        );
+
+        this.logger.log(`📋 Fix result: ${fixResult}`);
+
+        if (this.isDoneFixResult(fixResult)) {
+          return { success: true, prNumber };
+        }
+
+        if (round === this.maxFixRounds) {
+          return {
+            success: false,
+            message: `PR #${prNumber} still needs review after ${this.maxFixRounds} fix rounds`,
+            prNumber,
+            reviewResult,
+            fixResult,
+          };
+        }
       }
     }
 

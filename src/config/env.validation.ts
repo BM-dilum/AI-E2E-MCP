@@ -22,6 +22,10 @@ export class EnvironmentVariables {
   GITHUB_REPO: string;
 
   @IsString()
+  @IsOptional()
+  GITHUB_BASE_BRANCH?: string;
+
+  @IsString()
   @IsNotEmpty()
   OPENAI_API_KEY: string;
 

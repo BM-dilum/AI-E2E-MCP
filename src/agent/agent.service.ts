@@ -41,6 +41,10 @@ export class AgentService {
       .join('\n');
   }
 
+  private isApprovedReviewResult(reviewResult: string): boolean {
+    return /^approved\b/i.test(reviewResult.trim());
+  }
+
   async shipFeature(spec: string, repoPath?: string) {
     this.logger.log('🚀 shipFeature starting');
 
@@ -90,7 +94,7 @@ export class AgentService {
     }
 
     // Stage 4b: Fix loop — only if needed
-    if (!reviewResult.includes('approved')) {
+    if (!this.isApprovedReviewResult(reviewResult)) {
       const { inline, general } =
         await this.githubService.getAllComments(prNumber);
 

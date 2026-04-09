@@ -10,6 +10,10 @@ export class GitService {
 
   constructor(private configService: ConfigService) {}
 
+  private getBaseBranch(): string {
+    return this.configService.get<string>('GITHUB_BASE_BRANCH') || 'dev';
+  }
+
   private getRepoPath(repoPath?: string): string {
     return (
       repoPath ?? this.configService.get<string>('REPO_PATH') ?? process.cwd()
@@ -28,8 +32,9 @@ export class GitService {
   //checkout to main and pull request
   checkoutMain(repoPath?: string) {
     const root = this.getRepoPath(repoPath);
-    execSync('git checkout main', { cwd: root });
-    execSync('git pull origin main', { cwd: root });
+    const baseBranch = this.getBaseBranch();
+    execSync(`git checkout ${baseBranch}`, { cwd: root });
+    execSync(`git pull origin ${baseBranch}`, { cwd: root });
   }
 
   //create a branch

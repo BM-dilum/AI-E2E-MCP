@@ -15,7 +15,7 @@ export interface GeneratedFileSummary {
 @Injectable()
 export class AgentService {
   private readonly logger = new Logger(AgentService.name);
-  private readonly maxFixRounds = 3;
+  private readonly maxFixRounds = 5;
 
   constructor(
     private gitSetupAgent: GitSetupAgent,

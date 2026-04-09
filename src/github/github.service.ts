@@ -33,6 +33,40 @@ export class GithubService {
     this.repo = this.configService.getOrThrow('GITHUB_REPO');
   }
 
+  private normalizeCommentBody(body?: string | null): string {
+    return (body ?? '').replace(/\s+/g, ' ').trim();
+  }
+
+  private dedupeInlineComments<T extends Comment>(
+    comments: T[],
+  ): T[] {
+    const unique = new Map<string, T>();
+
+    for (const comment of comments) {
+      const key = [
+        comment.path,
+        comment.line ?? '',
+        this.normalizeCommentBody(comment.body),
+      ].join('|');
+      unique.set(key, comment);
+    }
+
+    return [...unique.values()];
+  }
+
+  private dedupeGeneralComments<T extends { body?: string | null; id: number }>(
+    comments: T[],
+  ): T[] {
+    const unique = new Map<string, T>();
+
+    for (const comment of comments) {
+      const key = this.normalizeCommentBody(comment.body);
+      unique.set(key, comment);
+    }
+
+    return [...unique.values()];
+  }
+
   //open new PR
   async openPR(
     branch: string,
@@ -79,9 +113,11 @@ export class GithubService {
       pull_number: prNumber,
     });
 
-    const comments = data.filter((c) => c.user?.login.includes('coderabbit'));
+    const comments = this.dedupeInlineComments(
+      data.filter((c) => c.user?.login.includes('coderabbit')) as Comment[],
+    );
 
-    this.logger.log(`Found ${comments.length} general CodeRabbit comments`);
+    this.logger.log(`Found ${comments.length} inline CodeRabbit comments`);
     return comments;
   }
 
@@ -93,7 +129,9 @@ export class GithubService {
       issue_number: prNumber,
     });
 
-    const comments = data.filter((c) => c.user?.login.includes('coderabbit'));
+    const comments = this.dedupeGeneralComments(
+      data.filter((c) => c.user?.login.includes('coderabbit')),
+    );
 
     this.logger.log(`Found ${comments.length} general CodeRabbit comments`);
     return comments;

@@ -22,6 +22,7 @@ export class GithubService {
   private octokit: Octokit;
   private owner: string;
   private repo: string;
+  private baseBranch: string;
   private readonly logger = new Logger(GithubService.name);
 
   constructor(private configService: ConfigService) {
@@ -31,6 +32,8 @@ export class GithubService {
 
     this.owner = this.configService.getOrThrow('GITHUB_OWNER');
     this.repo = this.configService.getOrThrow('GITHUB_REPO');
+    this.baseBranch =
+      this.configService.get<string>('GITHUB_BASE_BRANCH') || 'dev';
   }
 
   //open new PR
@@ -41,22 +44,18 @@ export class GithubService {
   ): Promise<PullRequest> {
     this.logger.log(`Openning PR: ${title}`);
 
-    // get deafult branch
-    const { data: repoData } = await this.octokit.rest.repos.get({
-      owner: this.owner,
-      repo: this.repo,
-    });
-
     const { data: pr } = await this.octokit.rest.pulls.create({
       owner: this.owner,
       repo: this.repo,
       title,
       head: branch,
-      base: repoData.default_branch,
+      base: this.baseBranch,
       body,
     });
 
-    this.logger.log(`✅ PR opened: ${pr.html_url}`);
+    this.logger.log(
+      `✅ PR opened: ${pr.html_url} (${branch} -> ${this.baseBranch})`,
+    );
     return pr as PullRequest;
   }
 
@@ -274,13 +273,20 @@ export class GithubService {
 
   // merge the PR
   async mergePR(prNumber: number) {
-    // await this.octokit.rest.pulls.merge({
-    //   owner: this.owner,
-    //   repo: this.repo,
-    //   pull_number: prNumber,
-    //   merge_method: 'squash',
-    // });
-    this.logger.log(`✅ Merged PR #${prNumber}`);
+    const { data } = await this.octokit.rest.pulls.merge({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+      merge_method: 'squash',
+    });
+
+    if (!data.merged) {
+      throw new Error(
+        `GitHub did not merge PR #${prNumber}: ${data.message ?? 'unknown error'}`,
+      );
+    }
+
+    this.logger.log(`✅ Merged PR #${prNumber}: ${data.sha}`);
   }
 
   async postComment(prNumber: number, body: string) {

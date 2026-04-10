@@ -1,6 +1,6 @@
 # NestJS Employee Management System
 
-A clean NestJS application for managing employees with full CRUD operations, SQLite persistence, TypeORM, and request validation, optimized for development and testing.
+A simple NestJS application for managing employees with full CRUD operations, SQLite persistence, TypeORM, and request validation, built for development and testing.
 
 ## Overview
 

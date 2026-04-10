@@ -19,8 +19,8 @@ export class EmployeesService {
 
     const driverError = error.driverError as { code?: string; detail?: string; message?: string } | undefined;
     const code = driverError?.code ?? '';
-    const message = (driverError?.message ?? '').toLowerCase();
-    const detail = (driverError?.detail ?? '').toLowerCase();
+    const message = typeof driverError?.message === 'string' ? driverError.message.toLowerCase() : '';
+    const detail = typeof driverError?.detail === 'string' ? driverError.detail.toLowerCase() : '';
 
     return code === '23505' || message.includes('unique') || detail.includes('unique');
   }

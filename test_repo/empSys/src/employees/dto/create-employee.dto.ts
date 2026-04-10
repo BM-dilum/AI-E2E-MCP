@@ -1,4 +1,4 @@
-import { IsDecimal, IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString, Matches } from 'class-validator';
 
 export class CreateEmployeeDto {
   @IsString()
@@ -19,6 +19,6 @@ export class CreateEmployeeDto {
 
   @IsNumber()
   @IsPositive()
-  @IsDecimal({ decimal_digits: '0,2' })
+  @Matches(/^\d+(\.\d{1,2})?$/)
   salary: number;
 }

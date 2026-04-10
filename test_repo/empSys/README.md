@@ -99,7 +99,7 @@ DELETE /employees/:id
 
 - `firstName`: required string
 - `lastName`: required string
-- `email`: required valid email; uniqueness is enforced by the database/service layer
+- `email`: required valid email; uniqueness is enforced by the database/service layer, not DTO validation
 - `position`: required string
 - `salary`: required number greater than 0
 

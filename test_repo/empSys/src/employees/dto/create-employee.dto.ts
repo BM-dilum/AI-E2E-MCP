@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString, MaxDecimalPlaces } from 'class-validator';
 
 export class CreateEmployeeDto {
   @IsString()
@@ -19,5 +19,6 @@ export class CreateEmployeeDto {
 
   @IsNumber()
   @IsPositive()
+  @MaxDecimalPlaces(2)
   salary: number;
 }

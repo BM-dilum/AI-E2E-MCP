@@ -18,10 +18,11 @@ export class EmployeesService {
     }
 
     const driverError = error.driverError as { code?: string; detail?: string; message?: string } | undefined;
+    const code = driverError?.code ?? '';
     const message = (driverError?.message ?? '').toLowerCase();
     const detail = (driverError?.detail ?? '').toLowerCase();
 
-    return driverError?.code === '23505' || message.includes('unique') || detail.includes('unique');
+    return code === '23505' || message.includes('unique') || detail.includes('unique');
   }
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {

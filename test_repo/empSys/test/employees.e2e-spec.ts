@@ -1,9 +1,8 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { Employee } from '../src/employees/entities/employee.entity';
+import * as request from 'supertest';
 
 describe('EmployeesController (e2e)', () => {
   let app: INestApplication;
@@ -166,11 +165,7 @@ describe('EmployeesController (e2e)', () => {
     const employeeId = 9999;
     const response = await request(server).get(`/employees/${employeeId}`).expect(404);
 
-    expect(response.body.message).toEqual(
-      expect.stringContaining('not found'),
-    );
-    expect(response.body.message).toEqual(
-      expect.stringContaining(String(employeeId)),
-    );
+    expect(response.body.message).toEqual(expect.stringContaining(String(employeeId)));
+    expect(response.body.message).toEqual(expect.stringContaining('not found'));
   });
 });

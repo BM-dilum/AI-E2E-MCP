@@ -95,10 +95,11 @@ DELETE /employees/:id
 - `lastName`: required string
 - `email`: required valid email
 - `position`: required string
-- `salary`: required number greater than 0 with up to 2 decimal places
+- `salary`: required number greater than 0 and may include up to 2 decimal places
 
 ## Notes
 
 - Database synchronization is controlled by the `TYPEORM_SYNCHRONIZE` environment variable.
+- TypeORM synchronization is environment-controlled via `TYPEORM_SYNCHRONIZE`.
 - SQLite data is stored locally by TypeORM.
 - Validation errors return standard NestJS 400 responses.

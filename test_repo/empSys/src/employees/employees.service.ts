@@ -22,10 +22,12 @@ export class EmployeesService {
       code === 'ER_DUP_ENTRY' ||
       code === 'SQLITE_CONSTRAINT' ||
       code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+      code === 'SQLITE_CONSTRAINT_PRIMARYKEY' ||
       errno === 1062 ||
       message.includes('unique constraint') ||
       message.includes('duplicate') ||
-      message.includes('constraint failed')
+      message.includes('constraint failed') ||
+      message.includes('not unique')
     );
   }
 

@@ -12,6 +12,23 @@ export class EmployeesService {
     private readonly employeesRepository: Repository<Employee>,
   ) {}
 
+  private isDuplicateEmailError(error: any): boolean {
+    const code = error?.code;
+    const errno = error?.errno;
+    const message = String(error?.message || '').toLowerCase();
+
+    return (
+      code === '23505' ||
+      code === 'ER_DUP_ENTRY' ||
+      code === 'SQLITE_CONSTRAINT' ||
+      code === 'SQLITE_CONSTRAINT_UNIQUE' ||
+      errno === 1062 ||
+      message.includes('unique constraint') ||
+      message.includes('duplicate') ||
+      message.includes('constraint failed')
+    );
+  }
+
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     const existingEmployee = await this.employeesRepository.findOne({
       where: { email: createEmployeeDto.email },
@@ -26,7 +43,7 @@ export class EmployeesService {
     try {
       return await this.employeesRepository.save(employee);
     } catch (error) {
-      if (error?.code === '23505' || error?.code === 'ER_DUP_ENTRY') {
+      if (this.isDuplicateEmailError(error)) {
         throw new BadRequestException('Employee with this email already exists');
       }
       throw error;
@@ -71,7 +88,7 @@ export class EmployeesService {
     try {
       return await this.employeesRepository.save(updatedEmployee);
     } catch (error) {
-      if (error?.code === '23505' || error?.code === 'ER_DUP_ENTRY') {
+      if (this.isDuplicateEmailError(error)) {
         throw new BadRequestException('Employee with this email already exists');
       }
       throw error;

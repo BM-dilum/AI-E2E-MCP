@@ -11,13 +11,21 @@ import { Employee } from './employees/entities/employee.entity';
     }),
     TypeOrmModule.forRootAsync({
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'sqlite',
-        database: configService.get<string>('DATABASE_PATH') || 'empSys.sqlite',
-        entities: [Employee],
-        synchronize: configService.get<string>('TYPEORM_SYNCHRONIZE') === 'true',
-        autoLoadEntities: true,
-      }),
+      useFactory: (configService: ConfigService) => {
+        const isProduction = configService.get<string>('NODE_ENV') === 'production';
+        const synchronize = configService.get<string>('TYPEORM_SYNCHRONIZE');
+
+        return {
+          type: 'sqlite',
+          database: configService.get<string>('DATABASE_PATH') || 'empSys.sqlite',
+          entities: [Employee],
+          synchronize:
+            synchronize !== undefined
+              ? synchronize === 'true'
+              : !isProduction,
+          autoLoadEntities: true,
+        };
+      },
     }),
     EmployeesModule,
   ],

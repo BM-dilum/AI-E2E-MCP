@@ -25,16 +25,20 @@ export class EmployeesService {
     return code === '23505' || message.includes('unique') || detail.includes('unique');
   }
 
+  private handleSaveError(error: unknown): never {
+    if (this.isUniqueConstraintViolation(error)) {
+      throw new BadRequestException('Employee with this email already exists');
+    }
+    throw error;
+  }
+
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     const employee = this.employeesRepository.create(createEmployeeDto);
 
     try {
       return await this.employeesRepository.save(employee);
     } catch (error) {
-      if (this.isUniqueConstraintViolation(error)) {
-        throw new BadRequestException('Employee with this email already exists');
-      }
-      throw error;
+      this.handleSaveError(error);
     }
   }
 
@@ -66,10 +70,7 @@ export class EmployeesService {
     try {
       return await this.employeesRepository.save(updatedEmployee);
     } catch (error) {
-      if (this.isUniqueConstraintViolation(error)) {
-        throw new BadRequestException('Employee with this email already exists');
-      }
-      throw error;
+      this.handleSaveError(error);
     }
   }
 

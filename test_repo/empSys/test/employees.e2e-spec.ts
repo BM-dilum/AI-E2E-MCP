@@ -11,7 +11,17 @@ describe('EmployeesController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule, TypeOrmModule.forFeature([Employee])],
+      imports: [
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          entities: [Employee],
+          synchronize: true,
+          dropSchema: true,
+        }),
+        AppModule,
+        TypeOrmModule.forFeature([Employee]),
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -31,13 +41,8 @@ describe('EmployeesController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    const repository = app.get('EmployeeRepository');
-    if (repository?.clear) {
-      await repository.clear();
-    } else {
-      const dataSource = app.get('DataSource');
-      await dataSource.getRepository(Employee).clear();
-    }
+    const dataSource = app.get('DataSource');
+    await dataSource.getRepository(Employee).clear();
   });
 
   afterAll(async () => {
@@ -50,7 +55,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Doe',
       email: 'john.doe@example.com',
       position: 'Developer',
-      salary: 75000,
+      salaryCents: 7500000,
     };
 
     const response = await request(server).post('/employees').send(payload).expect(201);
@@ -61,7 +66,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: payload.lastName,
       email: payload.email,
       position: payload.position,
-      salary: payload.salary,
+      salaryCents: payload.salaryCents,
     });
     expect(response.body.createdAt).toBeDefined();
     expect(response.body.updatedAt).toBeDefined();
@@ -73,7 +78,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Doe',
       email: 'invalid-email',
       position: 'Developer',
-      salary: -10,
+      salaryCents: -10,
       extraField: 'not allowed',
     };
 
@@ -89,7 +94,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Smith',
       email: 'jane.smith@example.com',
       position: 'Manager',
-      salary: 90000,
+      salaryCents: 9000000,
     });
 
     const response = await request(server).get('/employees').expect(200);
@@ -101,7 +106,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Smith',
       email: 'jane.smith@example.com',
       position: 'Manager',
-      salary: 90000,
+      salaryCents: 9000000,
     });
   });
 
@@ -111,7 +116,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Brown',
       email: 'alice.brown@example.com',
       position: 'Analyst',
-      salary: 65000,
+      salaryCents: 6500000,
     });
 
     const response = await request(server).get(`/employees/${created.body.id}`).expect(200);
@@ -122,7 +127,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Brown',
       email: 'alice.brown@example.com',
       position: 'Analyst',
-      salary: 65000,
+      salaryCents: 6500000,
     });
   });
 
@@ -132,14 +137,14 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Taylor',
       email: 'bob.taylor@example.com',
       position: 'Designer',
-      salary: 70000,
+      salaryCents: 7000000,
     });
 
     const response = await request(server)
       .patch(`/employees/${created.body.id}`)
       .send({
         position: 'Senior Designer',
-        salary: 80000,
+        salaryCents: 8000000,
       })
       .expect(200);
 
@@ -149,7 +154,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Taylor',
       email: 'bob.taylor@example.com',
       position: 'Senior Designer',
-      salary: 80000,
+      salaryCents: 8000000,
     });
   });
 
@@ -159,7 +164,7 @@ describe('EmployeesController (e2e)', () => {
       lastName: 'Green',
       email: 'chris.green@example.com',
       position: 'Engineer',
-      salary: 85000,
+      salaryCents: 8500000,
     });
 
     await request(server).delete(`/employees/${created.body.id}`).expect(200);

@@ -31,11 +31,8 @@ export class EmployeesService {
       throw new BadRequestException('An employee with this email already exists');
     }
 
-    const { salary, ...employeeData } = createEmployeeDto as CreateEmployeeDto & { salary?: number };
-
     const employee = this.employeesRepository.create({
-      ...employeeData,
-      ...(salary !== undefined ? { salaryCents: Math.round(salary * 100) } : {}),
+      ...createEmployeeDto,
     });
 
     try {
@@ -85,11 +82,9 @@ export class EmployeesService {
       throw new NotFoundException(`Employee with id ${id} not found`);
     }
 
-    const { salary, ...updateData } = updateEmployeeDto as UpdateEmployeeDto & { salary?: number };
-
-    if (updateData.email && updateData.email !== employee.email) {
+    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
       const existingEmployee = await this.employeesRepository.findOne({
-        where: { email: updateData.email },
+        where: { email: updateEmployeeDto.email },
       });
 
       if (existingEmployee && existingEmployee.id !== id) {
@@ -97,11 +92,7 @@ export class EmployeesService {
       }
     }
 
-    Object.assign(employee, updateData);
-
-    if (salary !== undefined) {
-      employee.salaryCents = Math.round(salary * 100);
-    }
+    Object.assign(employee, updateEmployeeDto);
 
     try {
       const savedEmployee = await this.employeesRepository.save(employee);

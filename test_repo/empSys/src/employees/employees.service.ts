@@ -109,7 +109,7 @@ export class EmployeesService {
     }
   }
 
-  async remove(id: number): Promise<void> {
+  async remove(id: number): Promise<EmployeeApi> {
     const employee = await this.employeesRepository.findOne({
       where: { id },
     });
@@ -118,6 +118,7 @@ export class EmployeesService {
       throw new NotFoundException(`Employee with id ${id} not found`);
     }
 
-    await this.employeesRepository.remove(employee);
+    const removedEmployee = await this.employeesRepository.remove(employee);
+    return this.toApi(removedEmployee);
   }
 }

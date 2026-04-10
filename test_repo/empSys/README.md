@@ -54,7 +54,7 @@ Run the following command from the project root directory:
 cd test_repo/empSys
 npm run start:dev
 
-The server will start on:
+The server will start on the configured PORT environment variable, with a default of 3000:
 
 http://localhost:3000
 

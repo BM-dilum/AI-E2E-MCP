@@ -28,11 +28,15 @@ export class GithubFixAgent {
   private normalizeResult(output: string): string {
     const normalized = output.trim();
 
-    if (/^done\b/i.test(normalized)) {
+    if (/^approved\b/i.test(normalized)) {
       return normalized;
     }
 
     if (/^needs_review\b/i.test(normalized)) {
+      return normalized;
+    }
+
+    if (/^timed_out\b/i.test(normalized)) {
       return normalized;
     }
 
@@ -88,8 +92,9 @@ export class GithubFixAgent {
       3. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
       4. resolve_comments prNumber=${prNumber}
       5. trigger_and_wait_for_review prNumber=${prNumber}
-      6. If APPROVED or timed_out → stop, return: DONE prNumber=${prNumber}
-      7. If COMMENTED or CHANGES_REQUESTED → stop, return: NEEDS_REVIEW prNumber=${prNumber}
+      6. If APPROVED → stop, return: APPROVED prNumber=${prNumber}
+      7. If timed_out → stop, return: TIMED_OUT prNumber=${prNumber}
+      8. If COMMENTED or CHANGES_REQUESTED → stop, return: NEEDS_REVIEW prNumber=${prNumber}
 
       RULES:
       - First tool call MUST be fix_file — not anything else
@@ -114,8 +119,10 @@ export class GithubFixAgent {
       typeof output === 'string' ? output : JSON.stringify(output),
     );
 
-    if (/^done\b/i.test(normalizedOutput)) {
+    if (/^approved\b/i.test(normalizedOutput)) {
       this.logger.log(`✅ GithubFixAgent done: ${normalizedOutput}`);
+    } else if (/^timed_out\b/i.test(normalizedOutput)) {
+      this.logger.warn(`⏰ GithubFixAgent timed out: ${normalizedOutput}`);
     } else {
       this.logger.warn(`⚠️ GithubFixAgent needs review: ${normalizedOutput}`);
     }

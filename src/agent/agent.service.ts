@@ -46,7 +46,7 @@ export class AgentService {
   }
 
   private isDoneFixResult(result: string): boolean {
-    return /^done\b/i.test(result.trim());
+    return /^approved\b/i.test(result.trim());
   }
 
   async shipFeature(spec: string, repoPath?: string) {

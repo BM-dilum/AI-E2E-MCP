@@ -10,6 +10,10 @@ describe('EmployeesController (e2e)', () => {
   let createdEmployeeId: number;
 
   beforeAll(async () => {
+    process.env.NODE_ENV = 'test';
+    process.env.DATABASE_PATH = ':memory:';
+    process.env.TYPEORM_SYNCHRONIZE = 'true';
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule, TypeOrmModule.forFeature([Employee])],
     }).compile();

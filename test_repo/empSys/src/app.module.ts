@@ -13,13 +13,7 @@ import { Employee } from './employees/entities/employee.entity';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const nodeEnv = configService.get<string>('NODE_ENV');
-        const isDevelopment = nodeEnv === 'development';
-        const synchronizeEnv = configService.get<string>('TYPEORM_SYNCHRONIZE');
-
-        const synchronize =
-          synchronizeEnv !== undefined
-            ? synchronizeEnv === 'true'
-            : isDevelopment;
+        const synchronize = nodeEnv === 'development' || nodeEnv === 'test';
 
         return {
           type: 'sqlite',

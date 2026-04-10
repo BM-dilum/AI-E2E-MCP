@@ -100,5 +100,6 @@ DELETE /employees/:id
 ## Notes
 
 - Database synchronization is controlled by the `TYPEORM_SYNCHRONIZE` environment variable.
+- When `TYPEORM_SYNCHRONIZE` is enabled, TypeORM synchronizes the database schema automatically.
 - SQLite data is stored locally by TypeORM.
 - Validation errors return standard NestJS 400 responses.

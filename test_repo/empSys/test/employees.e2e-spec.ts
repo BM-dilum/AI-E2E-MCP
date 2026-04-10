@@ -42,7 +42,7 @@ describe('EmployeesController (e2e)', () => {
 
     await app.init();
 
-    dataSource = app.get(DataSource);
+    dataSource = testDataSource;
     employeeRepository = dataSource.getRepository(Employee);
   });
 

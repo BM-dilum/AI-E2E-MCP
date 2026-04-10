@@ -52,7 +52,7 @@ npm install
 cd test_repo/empSys
 npm run start:dev
 
-The server will start on the configured PORT environment variable. If PORT is not set, the application defaults to 3000:
+The server port is configurable via the PORT environment variable. If PORT is not set, the application defaults to 3000:
 
 http://localhost:3000
 

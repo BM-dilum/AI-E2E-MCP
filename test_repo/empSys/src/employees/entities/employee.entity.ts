@@ -18,8 +18,8 @@ export class Employee {
   @Column()
   position: string;
 
-  @Column('real')
-  salary: number;
+  @Column('integer')
+  salaryCents: number;
 
   @CreateDateColumn()
   createdAt: Date;

@@ -185,9 +185,13 @@ export class GithubService {
     fixedFiles: string[],
   ) {
     const threadMap = await this.getThreadIds(prNumber);
+    const filesToResolve =
+      fixedFiles.length > 0
+        ? new Set(fixedFiles)
+        : new Set(comments.map((comment) => comment.path).filter(Boolean));
 
     for (const comment of comments) {
-      if (fixedFiles.includes(comment.path)) {
+      if (filesToResolve.has(comment.path)) {
         try {
           await this.replyToComment(
             prNumber,

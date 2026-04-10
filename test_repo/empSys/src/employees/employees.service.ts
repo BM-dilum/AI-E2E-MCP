@@ -21,7 +21,12 @@ export class EmployeesService {
       throw new BadRequestException('An employee with this email already exists');
     }
 
-    const employee = this.employeesRepository.create(createEmployeeDto);
+    const { salary, ...employeeData } = createEmployeeDto as CreateEmployeeDto & { salary?: number };
+
+    const employee = this.employeesRepository.create({
+      ...employeeData,
+      ...(salary !== undefined ? { salaryCents: Math.round(salary * 100) } : {}),
+    });
 
     try {
       return await this.employeesRepository.save(employee);
@@ -56,9 +61,11 @@ export class EmployeesService {
   async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<Employee> {
     const employee = await this.findOne(id);
 
-    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
+    const { salary, ...updateData } = updateEmployeeDto as UpdateEmployeeDto & { salary?: number };
+
+    if (updateData.email && updateData.email !== employee.email) {
       const existingEmployee = await this.employeesRepository.findOne({
-        where: { email: updateEmployeeDto.email },
+        where: { email: updateData.email },
       });
 
       if (existingEmployee && existingEmployee.id !== id) {
@@ -66,7 +73,11 @@ export class EmployeesService {
       }
     }
 
-    Object.assign(employee, updateEmployeeDto);
+    Object.assign(employee, updateData);
+
+    if (salary !== undefined) {
+      employee.salaryCents = Math.round(salary * 100);
+    }
 
     try {
       return await this.employeesRepository.save(employee);

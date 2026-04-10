@@ -18,6 +18,6 @@ export class CreateEmployeeDto {
   position: string;
 
   @IsNumber()
-  @Min(0.01)
-  salary: number;
+  @Min(1)
+  salaryCents: number;
 }

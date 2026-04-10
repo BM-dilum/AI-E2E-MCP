@@ -16,6 +16,10 @@ export class EmployeesService {
     const code = error?.code;
     const errno = error?.errno;
     const message = String(error?.message || '').toLowerCase();
+    const driverError = error?.driverError;
+    const driverCode = driverError?.code;
+    const driverErrno = driverError?.errno;
+    const driverMessage = String(driverError?.message || '').toLowerCase();
 
     return (
       code === '23505' ||
@@ -23,11 +27,21 @@ export class EmployeesService {
       code === 'SQLITE_CONSTRAINT' ||
       code === 'SQLITE_CONSTRAINT_UNIQUE' ||
       code === 'SQLITE_CONSTRAINT_PRIMARYKEY' ||
+      driverCode === '23505' ||
+      driverCode === 'ER_DUP_ENTRY' ||
+      driverCode === 'SQLITE_CONSTRAINT' ||
+      driverCode === 'SQLITE_CONSTRAINT_UNIQUE' ||
+      driverCode === 'SQLITE_CONSTRAINT_PRIMARYKEY' ||
       errno === 1062 ||
+      driverErrno === 1062 ||
       message.includes('unique constraint') ||
       message.includes('duplicate') ||
       message.includes('constraint failed') ||
-      message.includes('not unique')
+      message.includes('not unique') ||
+      driverMessage.includes('unique constraint') ||
+      driverMessage.includes('duplicate') ||
+      driverMessage.includes('constraint failed') ||
+      driverMessage.includes('not unique')
     );
   }
 

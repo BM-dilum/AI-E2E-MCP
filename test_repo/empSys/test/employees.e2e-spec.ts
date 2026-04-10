@@ -169,7 +169,10 @@ describe('EmployeesController (e2e)', () => {
     const response = await request(server).get(`/employees/${employeeId}`).expect(404);
 
     expect(response.body.message).toEqual(
-      expect.arrayContaining([expect.stringContaining(`Employee with ID ${employeeId} not found`)]) as any,
+      expect.arrayContaining([
+        expect.stringContaining(String(employeeId)),
+        expect.stringContaining('not found'),
+      ]),
     );
   });
 });

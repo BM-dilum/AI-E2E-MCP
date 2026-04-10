@@ -31,9 +31,9 @@ export class EmployeesController {
     return this.employeesService.update(id, updateEmployeeDto);
   }
 
-  @HttpCode(HttpStatus.NO_CONTENT)
   @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
-    await this.employeesService.remove(id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    return this.employeesService.remove(id);
   }
 }

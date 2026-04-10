@@ -111,9 +111,9 @@ DELETE /employees/:id
 ## Notes
 
 - The database uses SQLite.
-- The database file path is configurable via the DB_PATH environment variable and defaults to empSys.sqlite.
+- The database file path is controlled by the DB_PATH environment variable and defaults to empSys.sqlite when not set.
 - Schema synchronization is controlled by the TYPEORM_SYNCHRONIZE environment variable and defaults to false.
-- Validation is enforced globally using NestJS ValidationPipe with:
+- Validation is enforced globally using NestJS ValidationPipe with runtime settings aligned to the application bootstrap:
   - whitelist: true
   - forbidNonWhitelisted: true
   - transform: true

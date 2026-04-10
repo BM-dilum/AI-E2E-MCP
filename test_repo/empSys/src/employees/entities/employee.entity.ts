@@ -3,27 +3,27 @@ import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateCol
 @Entity({ name: 'employees' })
 export class Employee {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: 'varchar' })
-  firstName: string;
+  firstName!: string;
 
   @Column({ type: 'varchar' })
-  lastName: string;
+  lastName!: string;
 
   @Index({ unique: true })
   @Column({ type: 'varchar' })
-  email: string;
+  email!: string;
 
   @Column({ type: 'varchar' })
-  position: string;
+  position!: string;
 
   @Column({ type: 'decimal', precision: 12, scale: 2 })
-  salary: string;
+  salary!: string;
 
   @CreateDateColumn({ type: 'datetime' })
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn({ type: 'datetime' })
-  updatedAt: Date;
+  updatedAt!: Date;
 }

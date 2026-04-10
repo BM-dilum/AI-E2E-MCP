@@ -8,8 +8,13 @@ import { Employee } from '../src/employees/entities/employee.entity';
 describe('EmployeesController (e2e)', () => {
   let app: INestApplication;
   let server: any;
+  const originalDbPath = process.env.DB_PATH;
+  const originalTypeormSynchronize = process.env.TYPEORM_SYNCHRONIZE;
 
   beforeAll(async () => {
+    process.env.DB_PATH = ':memory:';
+    process.env.TYPEORM_SYNCHRONIZE = 'true';
+
     const moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -35,6 +40,17 @@ describe('EmployeesController (e2e)', () => {
 
   afterAll(async () => {
     await app.close();
+    if (originalDbPath === undefined) {
+      delete process.env.DB_PATH;
+    } else {
+      process.env.DB_PATH = originalDbPath;
+    }
+
+    if (originalTypeormSynchronize === undefined) {
+      delete process.env.TYPEORM_SYNCHRONIZE;
+    } else {
+      process.env.TYPEORM_SYNCHRONIZE = originalTypeormSynchronize;
+    }
   });
 
   it('create employee successfully', async () => {

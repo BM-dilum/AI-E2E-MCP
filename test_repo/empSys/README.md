@@ -110,8 +110,10 @@ DELETE /employees/:id
 
 ## Notes
 
-- The database is configured with SQLite and `synchronize: true` for this test project.
-- Validation is enforced globally using NestJS `ValidationPipe` with:
-  - `whitelist: true`
-  - `forbidNonWhitelisted: true`
-  - `transform: true`
+- The database uses SQLite.
+- The database file path is configurable via the DB_PATH environment variable and defaults to empSys.sqlite.
+- Schema synchronization is controlled by the TYPEORM_SYNCHRONIZE environment variable and defaults to false.
+- Validation is enforced globally using NestJS ValidationPipe with:
+  - whitelist: true
+  - forbidNonWhitelisted: true
+  - transform: true

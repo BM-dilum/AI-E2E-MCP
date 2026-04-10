@@ -12,7 +12,7 @@ export class Employee {
   lastName: string;
 
   @Index({ unique: true })
-  @Column({ type: 'varchar', unique: true })
+  @Column({ type: 'varchar' })
   email: string;
 
   @Column({ type: 'varchar' })

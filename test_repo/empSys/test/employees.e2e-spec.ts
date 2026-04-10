@@ -1,5 +1,6 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
+import { DataSource } from 'typeorm';
 import * as request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { Employee } from '../src/employees/entities/employee.entity';
@@ -27,7 +28,7 @@ describe('EmployeesController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    const dataSource = app.get('DataSource');
+    const dataSource = app.get(DataSource);
     const repository = dataSource.getRepository(Employee);
     await repository.clear();
   });

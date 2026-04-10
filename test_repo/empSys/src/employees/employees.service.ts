@@ -13,14 +13,6 @@ export class EmployeesService {
   ) {}
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
-    const existingEmployee = await this.employeeRepository.findOne({
-      where: { email: createEmployeeDto.email },
-    });
-
-    if (existingEmployee) {
-      throw new BadRequestException('Employee with this email already exists');
-    }
-
     const employee = this.employeeRepository.create(createEmployeeDto);
 
     try {
@@ -55,16 +47,6 @@ export class EmployeesService {
 
   async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<Employee> {
     const employee = await this.findOne(id);
-
-    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
-      const existingEmployee = await this.employeeRepository.findOne({
-        where: { email: updateEmployeeDto.email },
-      });
-
-      if (existingEmployee && existingEmployee.id !== id) {
-        throw new BadRequestException('Employee with this email already exists');
-      }
-    }
 
     Object.assign(employee, updateEmployeeDto);
 

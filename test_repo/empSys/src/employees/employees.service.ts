@@ -22,7 +22,15 @@ export class EmployeesService {
     }
 
     const employee = this.employeeRepository.create(createEmployeeDto);
-    return this.employeeRepository.save(employee);
+
+    try {
+      return await this.employeeRepository.save(employee);
+    } catch (error) {
+      if (this.isUniqueEmailViolation(error)) {
+        throw new BadRequestException('Employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<Employee[]> {
@@ -59,11 +67,35 @@ export class EmployeesService {
     }
 
     Object.assign(employee, updateEmployeeDto);
-    return this.employeeRepository.save(employee);
+
+    try {
+      return await this.employeeRepository.save(employee);
+    } catch (error) {
+      if (this.isUniqueEmailViolation(error)) {
+        throw new BadRequestException('Employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {
     const employee = await this.findOne(id);
     await this.employeeRepository.remove(employee);
+  }
+
+  private isUniqueEmailViolation(error: unknown): boolean {
+    if (!error || typeof error !== 'object') {
+      return false;
+    }
+
+    const dbError = error as { code?: string; detail?: string; message?: string };
+
+    return (
+      dbError.code === '23505' ||
+      dbError.code === 'ER_DUP_ENTRY' ||
+      dbError.code === 'SQLITE_CONSTRAINT' ||
+      (typeof dbError.message === 'string' && dbError.message.toLowerCase().includes('unique')) ||
+      (typeof dbError.detail === 'string' && dbError.detail.toLowerCase().includes('email'))
+    );
   }
 }

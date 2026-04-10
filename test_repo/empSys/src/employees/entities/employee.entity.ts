@@ -18,8 +18,8 @@ export class Employee {
   @Column({ type: 'varchar' })
   position: string;
 
-  @Column({ type: 'real' })
-  salary: number;
+  @Column({ type: 'decimal', precision: 12, scale: 2 })
+  salary: string;
 
   @CreateDateColumn({ type: 'datetime' })
   createdAt: Date;

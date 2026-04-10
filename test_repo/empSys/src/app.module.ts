@@ -7,9 +7,9 @@ import { Employee } from './employees/entities/employee.entity';
   imports: [
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: 'empSys.sqlite',
+      database: process.env.DB_PATH ?? 'empSys.sqlite',
       entities: [Employee],
-      synchronize: true,
+      synchronize: process.env.TYPEORM_SYNCHRONIZE === 'true',
       autoLoadEntities: true,
     }),
     EmployeesModule,

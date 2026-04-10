@@ -3,21 +3,21 @@ import { IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString } from 'class-valid
 export class CreateEmployeeDto {
   @IsString()
   @IsNotEmpty()
-  firstName: string;
+  firstName!: string;
 
   @IsString()
   @IsNotEmpty()
-  lastName: string;
+  lastName!: string;
 
   @IsEmail()
   @IsNotEmpty()
-  email: string;
+  email!: string;
 
   @IsString()
   @IsNotEmpty()
-  position: string;
+  position!: string;
 
   @IsNumber()
   @IsPositive()
-  salary: number;
+  salary!: number;
 }

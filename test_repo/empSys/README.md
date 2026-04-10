@@ -74,7 +74,7 @@ Sample payload:
   "lastName": "Doe",
   "email": "john.doe@example.com",
   "position": "Software Engineer",
-  "salary": 75000
+  "salaryCents": 7500000
 }
 ```
 
@@ -104,7 +104,7 @@ Sample payload:
 ```json
 {
   "position": "Senior Software Engineer",
-  "salary": 90000
+  "salaryCents": 9000000
 }
 ```
 
@@ -127,12 +127,13 @@ DELETE /employees/1
 - `lastName`: required string
 - `email`: required valid email
 - `position`: required string
-- `salary`: required number greater than 0
+- `salaryCents`: required integer number greater than 0, representing salary in cents
 
 ### Update Employee
 
 - All fields optional
 - Validation applies to any provided fields
+- `salaryCents`, when provided, must be an integer number greater than 0, representing salary in cents
 
 ## Notes
 

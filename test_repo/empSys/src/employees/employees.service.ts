@@ -22,7 +22,15 @@ export class EmployeesService {
     }
 
     const employee = this.employeesRepository.create(createEmployeeDto);
-    return this.employeesRepository.save(employee);
+
+    try {
+      return await this.employeesRepository.save(employee);
+    } catch (error) {
+      if (error?.code === '23505' || error?.errno === 1062) {
+        throw new BadRequestException('An employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<Employee[]> {
@@ -59,7 +67,15 @@ export class EmployeesService {
     }
 
     Object.assign(employee, updateEmployeeDto);
-    return this.employeesRepository.save(employee);
+
+    try {
+      return await this.employeesRepository.save(employee);
+    } catch (error) {
+      if (error?.code === '23505' || error?.errno === 1062) {
+        throw new BadRequestException('An employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {

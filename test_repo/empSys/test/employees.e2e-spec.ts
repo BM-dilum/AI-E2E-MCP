@@ -76,7 +76,7 @@ describe('EmployeesController (e2e)', () => {
 
     const response = await request(server).post('/employees').send(payload).expect(400);
 
-    expect(response.body.message).toEqual(expect.arrayContaining(expect.any(Array)));
+    expect(response.body.message).toEqual(expect.arrayContaining([expect.any(String)]));
   });
 
   it('get all employees', async () => {

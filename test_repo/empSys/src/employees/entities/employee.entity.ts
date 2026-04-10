@@ -1,4 +1,9 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Index, ValueTransformer } from 'typeorm';
+
+const salaryTransformer: ValueTransformer = {
+  to: (value: number): number => Math.round(value * 100),
+  from: (value: number): number => value / 100,
+};
 
 @Entity({ name: 'employees' })
 export class Employee {
@@ -18,7 +23,7 @@ export class Employee {
   @Column({ type: 'varchar' })
   position: string;
 
-  @Column({ type: 'real' })
+  @Column({ type: 'integer', transformer: salaryTransformer })
   salary: number;
 
   @CreateDateColumn({ type: 'datetime' })

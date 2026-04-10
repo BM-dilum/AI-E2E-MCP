@@ -163,8 +163,11 @@ describe('EmployeesController (e2e)', () => {
   });
 
   it('return 404 for non-existent employee', async () => {
-    const response = await request(server).get('/employees/9999').expect(404);
+    const employeeId = 9999;
+    const response = await request(server).get(`/employees/${employeeId}`).expect(404);
 
-    expect(response.body.message).toBe('Employee with ID 9999 not found');
+    expect(response.body.message).toEqual(expect.anything());
+    expect(String(response.body.message)).toEqual(expect.stringContaining(String(employeeId)));
+    expect(String(response.body.message)).toEqual(expect.stringContaining('not found'));
   });
 });

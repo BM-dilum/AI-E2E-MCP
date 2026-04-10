@@ -9,7 +9,7 @@ import { Employee } from './employees/entities/employee.entity';
       type: 'sqlite',
       database: 'empSys.sqlite',
       entities: [Employee],
-      synchronize: true,
+      synchronize: process.env.NODE_ENV === 'development',
       autoLoadEntities: true,
     }),
     EmployeesModule,

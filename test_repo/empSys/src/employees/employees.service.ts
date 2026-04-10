@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -12,6 +12,19 @@ export class EmployeesService {
     private readonly employeesRepository: Repository<Employee>,
   ) {}
 
+  private isUniqueConstraintViolation(error: unknown): boolean {
+    if (!(error instanceof QueryFailedError)) {
+      return false;
+    }
+
+    const driverError = error.driverError as { code?: string; detail?: string; message?: string } | undefined;
+    return (
+      driverError?.code === '23505' ||
+      driverError?.message?.toLowerCase().includes('unique') ||
+      driverError?.detail?.toLowerCase().includes('unique')
+    );
+  }
+
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     const existingEmployee = await this.employeesRepository.findOne({
       where: { email: createEmployeeDto.email },
@@ -22,7 +35,15 @@ export class EmployeesService {
     }
 
     const employee = this.employeesRepository.create(createEmployeeDto);
-    return this.employeesRepository.save(employee);
+
+    try {
+      return await this.employeesRepository.save(employee);
+    } catch (error) {
+      if (this.isUniqueConstraintViolation(error)) {
+        throw new BadRequestException('Employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<Employee[]> {
@@ -59,7 +80,15 @@ export class EmployeesService {
     }
 
     const updatedEmployee = this.employeesRepository.merge(employee, updateEmployeeDto);
-    return this.employeesRepository.save(updatedEmployee);
+
+    try {
+      return await this.employeesRepository.save(updatedEmployee);
+    } catch (error) {
+      if (this.isUniqueConstraintViolation(error)) {
+        throw new BadRequestException('Employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {

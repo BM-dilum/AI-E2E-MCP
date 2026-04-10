@@ -42,7 +42,12 @@ export class EmployeesService {
       const savedEmployee = await this.employeesRepository.save(employee);
       return this.toApi(savedEmployee);
     } catch (error) {
-      if (error?.code === '23505' || error?.errno === 1062 || error?.code === 'SQLITE_CONSTRAINT' || error?.errno === 19) {
+      if (
+        error?.code === '23505' ||
+        error?.errno === 1062 ||
+        error?.code === 'SQLITE_CONSTRAINT' ||
+        error?.errno === 19
+      ) {
         throw new BadRequestException('An employee with this email already exists');
       }
       throw error;
@@ -102,7 +107,12 @@ export class EmployeesService {
       const savedEmployee = await this.employeesRepository.save(employee);
       return this.toApi(savedEmployee);
     } catch (error) {
-      if (error?.code === '23505' || error?.errno === 1062 || error?.code === 'SQLITE_CONSTRAINT' || error?.errno === 19) {
+      if (
+        error?.code === '23505' ||
+        error?.errno === 1062 ||
+        error?.code === 'SQLITE_CONSTRAINT' ||
+        error?.errno === 19
+      ) {
         throw new BadRequestException('An employee with this email already exists');
       }
       throw error;

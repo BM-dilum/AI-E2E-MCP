@@ -42,12 +42,16 @@ This project provides full CRUD operations for managing employees with validatio
 
 ### 1. Install dependencies
 
-From the project root:
+Run the following command from the project root directory:
 
+cd test_repo/empSys
 npm install
 
 ### 2. Run the application
 
+Run the following command from the project root directory:
+
+cd test_repo/empSys
 npm run start:dev
 
 The server will start on:
@@ -56,6 +60,9 @@ http://localhost:3000
 
 ### 3. Run tests
 
+Run the following command from the project root directory:
+
+cd test_repo/empSys
 npm run test:e2e
 
 ## API Endpoints
@@ -103,6 +110,6 @@ DELETE /employees/:id
 
 ## Notes
 
-- The application uses SQLite with TypeORM synchronization enabled only in non-production environments (NODE_ENV !== 'production').
+- The application uses SQLite with TypeORM synchronization enabled only in non-production environments (NODE_ENV !== 'production'); it is disabled in production.
 - Validation is enforced globally using NestJS ValidationPipe.
 - Employee email must be unique. Duplicate emails are rejected on create and update.

@@ -17,7 +17,7 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   position: string;
 
-  @IsNumber()
+  @IsNumber({ maxDecimalPlaces: 2 })
   @Min(0.01)
   salary: number;
 }

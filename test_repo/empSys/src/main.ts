@@ -16,7 +16,11 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  await app.listen(3000);
+  const port = Number(process.env.PORT) || 3000;
+  await app.listen(port);
 }
 
-void bootstrap();
+void bootstrap().catch((error) => {
+  console.error('Bootstrap failed:', error);
+  process.exit(1);
+});

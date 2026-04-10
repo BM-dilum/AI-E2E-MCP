@@ -168,6 +168,6 @@ describe('EmployeesController (e2e)', () => {
 
     expect(response.body.message).toEqual(expect.anything());
     expect(String(response.body.message)).toEqual(expect.stringContaining(String(employeeId)));
-    expect(String(response.body.message)).toEqual(expect.stringContaining('not found'));
+    expect(String(response.body.message).toEqual(expect.stringContaining('not found')));
   });
 });

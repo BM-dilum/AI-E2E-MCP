@@ -20,6 +20,9 @@ describe('EmployeesController (e2e)', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
 

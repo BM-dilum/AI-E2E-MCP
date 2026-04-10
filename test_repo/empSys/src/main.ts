@@ -16,8 +16,9 @@ async function bootstrap(): Promise<void> {
     }),
   );
 
-  const parsedPort = Number.parseInt(process.env.PORT ?? '', 10);
-  const port = Number.isNaN(parsedPort) ? 3000 : parsedPort;
+  const portEnv = process.env.PORT;
+  const parsedPort = portEnv === undefined ? NaN : Number(portEnv);
+  const port = Number.isInteger(parsedPort) && parsedPort >= 0 ? parsedPort : 3000;
   await app.listen(port);
 }
 

@@ -17,7 +17,7 @@ export class Employee {
   @Column({ type: 'varchar' })
   position: string;
 
-  @Column({ type: 'integer' })
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
   salary: number;
 
   @CreateDateColumn({ type: 'datetime' })

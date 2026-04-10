@@ -99,12 +99,12 @@ DELETE /employees/:id
 
 - `firstName`: required string
 - `lastName`: required string
-- `email`: required valid email and unique
+- `email`: required valid email; uniqueness is enforced by the database/service layer
 - `position`: required string
 - `salary`: required number greater than 0
 
 ## Notes
 
-- The database is configured with SQLite and schema synchronization is enabled only when `NODE_ENV === 'development'`; production should use migrations with `synchronize` disabled.
+- The database is configured with SQLite and schema synchronization is enabled only in development (`NODE_ENV === 'development'`); production should use migrations with `synchronize` disabled.
 - Global validation is enabled with whitelist and forbidNonWhitelisted options.
 - IDs are parsed as integers in controller routes.

@@ -19,6 +19,9 @@ describe('EmployeesController (e2e)', () => {
         whitelist: true,
         forbidNonWhitelisted: true,
         transform: true,
+        transformOptions: {
+          enableImplicitConversion: true,
+        },
       }),
     );
     await app.init();
@@ -165,7 +168,6 @@ describe('EmployeesController (e2e)', () => {
     const employeeId = 9999;
     const response = await request(server).get(`/employees/${employeeId}`).expect(404);
 
-    expect(response.body.message).toEqual(expect.stringContaining(String(employeeId)));
-    expect(response.body.message).toEqual(expect.stringContaining('not found'));
+    expect(response.body.message).toEqual(`Employee with ID ${employeeId} not found`);
   });
 });

@@ -14,7 +14,26 @@ describe('EmployeesController (e2e)', () => {
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
-    }).compile();
+    })
+      .overrideProvider(DataSource)
+      .useFactory({
+        factory: async () => {
+          const testDataSource = new DataSource({
+            type: 'sqlite',
+            database: ':memory:',
+            entities: [Employee],
+            synchronize: true,
+            dropSchema: true,
+          });
+
+          if (!testDataSource.isInitialized) {
+            await testDataSource.initialize();
+          }
+
+          return testDataSource;
+        },
+      })
+      .compile();
 
     app = moduleFixture.createNestApplication();
     app.useGlobalPipes(

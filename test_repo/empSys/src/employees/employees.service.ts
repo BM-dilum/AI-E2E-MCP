@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
@@ -71,18 +71,22 @@ export class EmployeesService {
     });
 
     if (existingEmployee && existingEmployee.id !== excludeId) {
-      throw new BadRequestException('Email already exists');
+      throw new ConflictException('Email already exists');
     }
   }
 
   private handleUniqueConstraintError(error: unknown): never {
     const message = error instanceof Error ? error.message : '';
+    const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
 
     if (
       message.includes('duplicate key value violates unique constraint') ||
       message.includes('UNIQUE constraint failed') ||
       message.includes('Duplicate entry') ||
-      message.includes('unique constraint')
+      message.includes('unique constraint') ||
+      code === '23505' ||
+      code === 'SQLITE_CONSTRAINT' ||
+      code === 'SQLITE_CONSTRAINT_UNIQUE'
     ) {
       throw new ConflictException('Email already exists');
     }

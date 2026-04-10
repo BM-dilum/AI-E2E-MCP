@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn, Index } from 'typeorm';
+import { Column, CreateDateColumn, Entity, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 
 @Entity({ name: 'employees' })
 export class Employee {
@@ -11,7 +11,6 @@ export class Employee {
   @Column({ type: 'varchar' })
   lastName: string;
 
-  @Index({ unique: true })
   @Column({ type: 'varchar', unique: true })
   email: string;
 

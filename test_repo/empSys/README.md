@@ -103,6 +103,6 @@ DELETE /employees/:id
 
 ## Notes
 
-- The application uses SQLite with TypeORM synchronization enabled for this test project.
+- The application uses SQLite with TypeORM synchronization enabled only in non-production environments (NODE_ENV !== 'production').
 - Validation is enforced globally using NestJS ValidationPipe.
 - Employee email must be unique. Duplicate emails are rejected on create and update.

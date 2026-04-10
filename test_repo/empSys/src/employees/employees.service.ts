@@ -77,7 +77,10 @@ export class EmployeesService {
 
   private handleUniqueConstraintError(error: unknown): never {
     const message = error instanceof Error ? error.message : '';
-    const code = typeof error === 'object' && error !== null && 'code' in error ? String((error as { code?: unknown }).code) : '';
+    const code =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : '';
 
     if (
       message.includes('duplicate key value violates unique constraint') ||

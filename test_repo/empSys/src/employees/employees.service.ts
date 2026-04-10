@@ -18,22 +18,13 @@ export class EmployeesService {
     }
 
     const driverError = error.driverError as { code?: string; detail?: string; message?: string } | undefined;
-    return (
-      driverError?.code === '23505' ||
-      driverError?.message?.toLowerCase().includes('unique') ||
-      driverError?.detail?.toLowerCase().includes('unique')
-    );
+    const message = driverError?.message?.toLowerCase() ?? '';
+    const detail = driverError?.detail?.toLowerCase() ?? '';
+
+    return driverError?.code === '23505' || message.includes('unique') || detail.includes('unique');
   }
 
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
-    const existingEmployee = await this.employeesRepository.findOne({
-      where: { email: createEmployeeDto.email },
-    });
-
-    if (existingEmployee) {
-      throw new BadRequestException('Employee with this email already exists');
-    }
-
     const employee = this.employeesRepository.create(createEmployeeDto);
 
     try {
@@ -68,16 +59,6 @@ export class EmployeesService {
 
   async update(id: number, updateEmployeeDto: UpdateEmployeeDto): Promise<Employee> {
     const employee = await this.findOne(id);
-
-    if (updateEmployeeDto.email && updateEmployeeDto.email !== employee.email) {
-      const existingEmployee = await this.employeesRepository.findOne({
-        where: { email: updateEmployeeDto.email },
-      });
-
-      if (existingEmployee && existingEmployee.id !== id) {
-        throw new BadRequestException('Employee with this email already exists');
-      }
-    }
 
     const updatedEmployee = this.employeesRepository.merge(employee, updateEmployeeDto);
 

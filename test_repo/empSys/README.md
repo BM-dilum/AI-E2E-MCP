@@ -105,6 +105,6 @@ DELETE /employees/:id
 
 ## Notes
 
-- The database is configured with SQLite and `synchronize: true` for test/demo convenience.
+- The database is configured with SQLite and schema synchronization is enabled only in development (`NODE_ENV === 'development'`); production should use migrations with synchronize disabled.
 - Global validation is enabled with whitelist and forbidNonWhitelisted options.
 - IDs are parsed as integers in controller routes.

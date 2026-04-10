@@ -22,7 +22,15 @@ export class EmployeesService {
     }
 
     const employee = this.employeesRepository.create(createEmployeeDto);
-    return this.employeesRepository.save(employee);
+
+    try {
+      return await this.employeesRepository.save(employee);
+    } catch (error) {
+      if (error?.code === '23505' || error?.code === 'ER_DUP_ENTRY') {
+        throw new BadRequestException('Employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async findAll(): Promise<Employee[]> {
@@ -39,7 +47,7 @@ export class EmployeesService {
     });
 
     if (!employee) {
-      throw new NotFoundException(`Employee with id ${id} not found`);
+      throw new NotFoundException(`Employee with ID ${id} not found`);
     }
 
     return employee;
@@ -59,7 +67,15 @@ export class EmployeesService {
     }
 
     const updatedEmployee = this.employeesRepository.merge(employee, updateEmployeeDto);
-    return this.employeesRepository.save(updatedEmployee);
+
+    try {
+      return await this.employeesRepository.save(updatedEmployee);
+    } catch (error) {
+      if (error?.code === '23505' || error?.code === 'ER_DUP_ENTRY') {
+        throw new BadRequestException('Employee with this email already exists');
+      }
+      throw error;
+    }
   }
 
   async remove(id: number): Promise<void> {

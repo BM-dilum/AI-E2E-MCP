@@ -58,6 +58,7 @@ npm run test:e2e
 POST /employees
 
 Sample payload:
+```json
 {
   "firstName": "John",
   "lastName": "Doe",
@@ -65,6 +66,7 @@ Sample payload:
   "position": "Software Engineer",
   "salary": 75000
 }
+```
 
 ### Get All Employees
 GET /employees
@@ -76,11 +78,13 @@ GET /employees/:id
 PATCH /employees/:id
 
 Sample payload:
+```json
 {
   "firstName": "Jane",
   "position": "Senior Software Engineer",
   "salary": 90000
 }
+```
 
 ### Delete Employee by ID
 DELETE /employees/:id

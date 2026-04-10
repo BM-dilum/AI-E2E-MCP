@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
@@ -16,7 +16,12 @@ export class EmployeesService {
     await this.ensureEmailIsUnique(createEmployeeDto.email);
 
     const employee = this.employeesRepository.create(createEmployeeDto);
-    return this.employeesRepository.save(employee);
+
+    try {
+      return await this.employeesRepository.save(employee);
+    } catch (error) {
+      this.handleUniqueConstraintError(error);
+    }
   }
 
   async findAll(): Promise<Employee[]> {
@@ -47,7 +52,12 @@ export class EmployeesService {
     }
 
     const updatedEmployee = this.employeesRepository.merge(employee, updateEmployeeDto);
-    return this.employeesRepository.save(updatedEmployee);
+
+    try {
+      return await this.employeesRepository.save(updatedEmployee);
+    } catch (error) {
+      this.handleUniqueConstraintError(error);
+    }
   }
 
   async remove(id: number): Promise<void> {
@@ -63,5 +73,20 @@ export class EmployeesService {
     if (existingEmployee && existingEmployee.id !== excludeId) {
       throw new BadRequestException('Email already exists');
     }
+  }
+
+  private handleUniqueConstraintError(error: unknown): never {
+    const message = error instanceof Error ? error.message : '';
+
+    if (
+      message.includes('duplicate key value violates unique constraint') ||
+      message.includes('UNIQUE constraint failed') ||
+      message.includes('Duplicate entry') ||
+      message.includes('unique constraint')
+    ) {
+      throw new ConflictException('Email already exists');
+    }
+
+    throw error;
   }
 }

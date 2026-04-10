@@ -17,6 +17,11 @@ export interface Comment {
   user: { login: string };
 }
 
+interface LatestCodeRabbitReview {
+  id: number | null;
+  submittedAt: string | null;
+}
+
 @Injectable()
 export class GithubService {
   private octokit: Octokit;
@@ -70,29 +75,74 @@ export class GithubService {
     return data as PullRequest;
   }
 
+  private async getLatestCodeRabbitReview(
+    prNumber: number,
+  ): Promise<LatestCodeRabbitReview> {
+    const { data: reviews } = await this.octokit.rest.pulls.listReviews({
+      owner: this.owner,
+      repo: this.repo,
+      pull_number: prNumber,
+    });
+
+    const coderabbitReviews = reviews.filter((review) =>
+      review.user?.login.includes('coderabbit'),
+    );
+
+    if (coderabbitReviews.length === 0) {
+      return { id: null, submittedAt: null };
+    }
+
+    const latest = coderabbitReviews[coderabbitReviews.length - 1];
+    return {
+      id: latest.id,
+      submittedAt: latest.submitted_at ?? null,
+    };
+  }
+
   //get all unresolved coderabbit pr comments
-  async getInlineComments(prNumber: number): Promise<Comment[]> {
+  async getInlineComments(
+    prNumber: number,
+    reviewId?: number | null,
+  ): Promise<Comment[]> {
     const { data } = await this.octokit.rest.pulls.listReviewComments({
       owner: this.owner,
       repo: this.repo,
       pull_number: prNumber,
     });
 
-    const comments = data.filter((c) => c.user?.login.includes('coderabbit'));
+    const comments = data.filter(
+      (c) =>
+        c.user?.login.includes('coderabbit') &&
+        (reviewId == null || c.pull_request_review_id === reviewId),
+    );
 
-    this.logger.log(`Found ${comments.length} general CodeRabbit comments`);
+    this.logger.log(`Found ${comments.length} inline CodeRabbit comments`);
     return comments;
   }
 
   //get all coderabbit comments (nitpicks)
-  async getGeneralComments(prNumber: number): Promise<any[]> {
+  async getGeneralComments(
+    prNumber: number,
+    submittedAt?: string | null,
+  ): Promise<any[]> {
     const { data } = await this.octokit.rest.issues.listComments({
       owner: this.owner,
       repo: this.repo,
       issue_number: prNumber,
     });
 
-    const comments = data.filter((c) => c.user?.login.includes('coderabbit'));
+    const submittedTime = submittedAt ? new Date(submittedAt).getTime() : null;
+    const comments = data.filter((c) => {
+      if (!c.user?.login.includes('coderabbit')) {
+        return false;
+      }
+
+      if (submittedTime == null) {
+        return true;
+      }
+
+      return new Date(c.created_at).getTime() >= submittedTime;
+    });
 
     this.logger.log(`Found ${comments.length} general CodeRabbit comments`);
     return comments;
@@ -100,8 +150,12 @@ export class GithubService {
 
   //get all Coderabbit comments (inline + general)
   async getAllComments(prNmber: number) {
-    const inline = await this.getInlineComments(prNmber);
-    const general = await this.getGeneralComments(prNmber);
+    const latestReview = await this.getLatestCodeRabbitReview(prNmber);
+    const inline = await this.getInlineComments(prNmber, latestReview.id);
+    const general = await this.getGeneralComments(
+      prNmber,
+      latestReview.submittedAt,
+    );
     return { inline, general };
   }
 
@@ -185,12 +239,24 @@ export class GithubService {
     fixedFiles: string[],
   ) {
     const threadMap = await this.getThreadIds(prNumber);
+    const latestReview = await this.getLatestCodeRabbitReview(prNumber);
+    const latestInlineComments = await this.getInlineComments(
+      prNumber,
+      latestReview.id,
+    );
+    const commentsToResolve = comments.filter(
+      (comment) => typeof comment?.id === 'number' && comment.path,
+    );
+    const resolvableComments =
+      commentsToResolve.length > 0 ? commentsToResolve : latestInlineComments;
     const filesToResolve =
       fixedFiles.length > 0
         ? new Set(fixedFiles)
-        : new Set(comments.map((comment) => comment.path).filter(Boolean));
+        : new Set(
+            resolvableComments.map((comment) => comment.path).filter(Boolean),
+          );
 
-    for (const comment of comments) {
+    for (const comment of resolvableComments) {
       if (filesToResolve.has(comment.path)) {
         try {
           await this.replyToComment(

@@ -129,6 +129,7 @@ export class AgentService {
         this.logger.log(`📋 Fix result: ${fixResult}`);
 
         if (this.isDoneFixResult(fixResult)) {
+          await this.githubService.mergePR(prNumber);
           return { success: true, prNumber };
         }
 

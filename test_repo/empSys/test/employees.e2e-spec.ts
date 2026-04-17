@@ -13,7 +13,17 @@ describe('EmployeesController (e2e)', () => {
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule, TypeOrmModule.forFeature([Employee])],
+      imports: [
+        AppModule,
+        TypeOrmModule.forRoot({
+          type: 'sqlite',
+          database: ':memory:',
+          dropSchema: true,
+          entities: [Employee],
+          synchronize: true,
+        }),
+        TypeOrmModule.forFeature([Employee]),
+      ],
     }).compile();
 
     app = moduleFixture.createNestApplication();

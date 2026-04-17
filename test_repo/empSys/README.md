@@ -84,11 +84,12 @@ DELETE /employees/:id
 - lastName: required string
 - email: required valid email
 - position: required string
-- salary: required number greater than 0
+- salary: required integer greater than or equal to 1
 
 ## Notes
 
-- The application uses SQLite with TypeORM synchronization enabled for this test project.
+- The application uses SQLite with TypeORM synchronization controlled by the TYPEORM_SYNCHRONIZE environment variable.
+- Synchronization defaults to enabled outside production and disabled in production unless explicitly overridden.
 - Validation is applied globally in `main.ts` with:
   - whitelist: true
   - forbidNonWhitelisted: true

@@ -1,13 +1,15 @@
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
 import * as request from 'supertest';
+import { Repository } from 'typeorm';
 import { AppModule } from '../src/app.module';
 import { Employee } from '../src/employees/entities/employee.entity';
 
 describe('EmployeesController (e2e)', () => {
   let app: INestApplication;
   let server: any;
+  let employeeRepository: Repository<Employee>;
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -24,6 +26,7 @@ describe('EmployeesController (e2e)', () => {
     );
     await app.init();
     server = app.getHttpServer();
+    employeeRepository = moduleFixture.get<Repository<Employee>>(getRepositoryToken(Employee));
   });
 
   afterAll(async () => {
@@ -33,9 +36,7 @@ describe('EmployeesController (e2e)', () => {
   });
 
   beforeEach(async () => {
-    await request(server).delete('/employees/1').catch(() => undefined);
-    await request(server).delete('/employees/2').catch(() => undefined);
-    await request(server).delete('/employees/3').catch(() => undefined);
+    await employeeRepository.clear();
   });
 
   it('create employee successfully', async () => {
@@ -73,11 +74,13 @@ describe('EmployeesController (e2e)', () => {
 
     const response = await request(server).post('/employees').send(payload).expect(400);
 
-    expect(response.body.message).toEqual(expect.arrayContaining([
-      expect.stringContaining('firstName'),
-      expect.stringContaining('email'),
-      expect.stringContaining('salary'),
-    ]));
+    expect(response.body.message).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('firstName'),
+        expect.stringContaining('email'),
+        expect.stringContaining('salary'),
+      ]),
+    );
   });
 
   it('get all employees', async () => {

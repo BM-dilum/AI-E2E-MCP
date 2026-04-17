@@ -37,7 +37,7 @@ export class EmployeesService {
     });
 
     if (!employee) {
-      throw new NotFoundException(`Employee with id ${id} not found`);
+      throw new NotFoundException('Employee not found');
     }
 
     return employee;

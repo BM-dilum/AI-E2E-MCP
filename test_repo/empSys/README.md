@@ -38,9 +38,9 @@ npm install
 
 npm run start:dev
 
-The app will start on:
+The app will start on the default port, or on the port specified by the PORT environment variable. For example:
 
-http://localhost:3000
+PORT=4000 npm run start:dev
 
 ### 3. Run tests
 

@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { QueryFailedError, Repository } from 'typeorm';
 import { Employee } from './entities/employee.entity';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
@@ -12,6 +12,23 @@ export class EmployeesService {
     private readonly employeeRepository: Repository<Employee>,
   ) {}
 
+  private handleUniqueEmailError(error: unknown): never {
+    if (error instanceof QueryFailedError) {
+      const driverError = error.driverError as { code?: string; detail?: string; message?: string };
+      const isUniqueViolation =
+        driverError?.code === '23505' ||
+        /unique/i.test(driverError?.message ?? '') ||
+        /duplicate/i.test(driverError?.message ?? '') ||
+        /email/i.test(driverError?.detail ?? '');
+
+      if (isUniqueViolation) {
+        throw new BadRequestException('An employee with this email already exists');
+      }
+    }
+
+    throw error;
+  }
+
   async create(createEmployeeDto: CreateEmployeeDto): Promise<Employee> {
     const existingEmployee = await this.employeeRepository.findOne({
       where: { email: createEmployeeDto.email },
@@ -22,7 +39,12 @@ export class EmployeesService {
     }
 
     const employee = this.employeeRepository.create(createEmployeeDto);
-    return this.employeeRepository.save(employee);
+
+    try {
+      return await this.employeeRepository.save(employee);
+    } catch (error) {
+      this.handleUniqueEmailError(error);
+    }
   }
 
   async findAll(): Promise<Employee[]> {
@@ -57,7 +79,12 @@ export class EmployeesService {
     }
 
     Object.assign(employee, updateEmployeeDto);
-    return this.employeeRepository.save(employee);
+
+    try {
+      return await this.employeeRepository.save(employee);
+    } catch (error) {
+      this.handleUniqueEmailError(error);
+    }
   }
 
   async remove(id: number): Promise<void> {

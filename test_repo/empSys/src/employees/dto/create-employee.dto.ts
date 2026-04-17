@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsNumber, IsPositive, IsString } from 'class-validator';
+import { IsEmail, IsInt, IsNotEmpty, IsString, Min } from 'class-validator';
 
 export class CreateEmployeeDto {
   @IsString()
@@ -17,7 +17,7 @@ export class CreateEmployeeDto {
   @IsNotEmpty()
   position: string;
 
-  @IsNumber()
-  @IsPositive()
+  @IsInt()
+  @Min(1)
   salary: number;
 }

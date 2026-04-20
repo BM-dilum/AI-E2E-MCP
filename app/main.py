@@ -32,7 +32,7 @@ def complete_todo(todo_id: str) -> TodoRead:
     todo = store.get(todo_id)
     if todo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
-    todo.mark_completed()
+    store.complete(todo_id)
     return TodoRead.model_validate(todo)
 
 

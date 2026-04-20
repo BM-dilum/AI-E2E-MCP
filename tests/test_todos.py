@@ -1,14 +1,14 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from app.main import app, todos
+from app.main import app, store
 
 
 @pytest.fixture(autouse=True)
 def clear_todos():
-    todos.clear()
+    store.clear()
     yield
-    todos.clear()
+    store.clear()
 
 
 @pytest.fixture

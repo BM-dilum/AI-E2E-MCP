@@ -12,8 +12,8 @@ class TodoUpdate(BaseModel):
     completed: bool
 
 
-class Todo(BaseModel):
-    id: int
+class TodoRead(BaseModel):
+    id: str
     title: str
     description: Optional[str] = None
     completed: bool = False
@@ -21,3 +21,7 @@ class Todo(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class Todo(TodoRead):
+    pass

@@ -11,12 +11,12 @@ store = TodoStore()
 @app.post("/todos", response_model=TodoRead, status_code=status.HTTP_201_CREATED)
 def create_todo(todo: TodoCreate) -> TodoRead:
     created = store.create(todo.title, todo.description)
-    return TodoRead.from_model(created)
+    return TodoRead.model_validate(created)
 
 
 @app.get("/todos", response_model=list[TodoRead])
 def list_todos() -> list[TodoRead]:
-    return [TodoRead.from_model(todo) for todo in store.list_all()]
+    return [TodoRead.model_validate(todo) for todo in store.list()]
 
 
 @app.get("/todos/{todo_id}", response_model=TodoRead)
@@ -24,15 +24,16 @@ def get_todo(todo_id: str) -> TodoRead:
     todo = store.get(todo_id)
     if todo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
-    return TodoRead.from_model(todo)
+    return TodoRead.model_validate(todo)
 
 
 @app.patch("/todos/{todo_id}/complete", response_model=TodoRead)
 def complete_todo(todo_id: str) -> TodoRead:
-    todo = store.complete(todo_id)
+    todo = store.get(todo_id)
     if todo is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Todo not found")
-    return TodoRead.from_model(todo)
+    todo.mark_completed()
+    return TodoRead.model_validate(todo)
 
 
 @app.delete("/todos/{todo_id}", status_code=status.HTTP_204_NO_CONTENT)

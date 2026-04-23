@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.28;
 
 contract LoggingContract {
@@ -31,6 +32,8 @@ contract LoggingContract {
         LogEntry[] memory logEntries,
         string memory txHash
     ) external {
+        require(bytes(sessionID).length > 0, "sessionID cannot be empty");
+
         SessionDataEntry storage entry = sessionData[sessionID];
         address owner = sessionOwners[sessionID];
 

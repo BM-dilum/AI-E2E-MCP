@@ -17,15 +17,14 @@ async function main() {
     throw new Error("MINT_AMOUNT is required");
   }
 
-  const [deployer] = await ethers.getSigners();
-  const token = await ethers.getContractAt("Token", tokenAddress, deployer);
+  const token = await ethers.getContractAt("Token", tokenAddress);
   const amount = ethers.parseUnits(mintAmount, 18);
 
   const tx = await token.mint(mintToAddress, amount);
   await tx.wait();
 
   console.log(`Minted ${mintAmount} tokens to ${mintToAddress}`);
-  console.log(`Transaction hash: ${tx.hash}`);
+  console.log(`Token contract: ${tokenAddress}`);
 }
 
 main().catch((error) => {

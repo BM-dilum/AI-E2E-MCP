@@ -32,7 +32,29 @@ contract LoggingContract {
     ) external {
         bool isNewSession = bytes(sessionData[sessionID].txHash).length == 0 && sessionData[sessionID].logs.length == 0;
 
-        sessionData[sessionID] = SessionDataEntry({logs: logEntries, txHash: txHash});
+        SessionDataEntry storage entry = sessionData[sessionID];
+        delete entry.logs;
+
+        for (uint256 i = 0; i < logEntries.length; i++) {
+            LogEntry memory sourceLog = logEntries[i];
+            ToolCall[] memory sourceToolCalls = sourceLog.toolCalls;
+
+            entry.logs.push();
+            LogEntry storage storedLog = entry.logs[entry.logs.length - 1];
+            storedLog.userRequest = sourceLog.userRequest;
+            storedLog.response = sourceLog.response;
+
+            for (uint256 j = 0; j < sourceToolCalls.length; j++) {
+                ToolCall memory sourceToolCall = sourceToolCalls[j];
+                storedLog.toolCalls.push(ToolCall({
+                    name: sourceToolCall.name,
+                    args: sourceToolCall.args,
+                    result: sourceToolCall.result
+                }));
+            }
+        }
+
+        entry.txHash = txHash;
 
         if (isNewSession) {
             sessionIDs.push(sessionID);
@@ -59,23 +81,41 @@ contract LoggingContract {
             return (new SessionDataEntry[](0), totalPages);
         }
 
-        uint256 startIndex = totalSessions - (page * effectivePageSize);
-        if (page * effectivePageSize > totalSessions) {
-            startIndex = 0;
-        }
+        uint256 startIndex = totalSessions - ((page - 1) * effectivePageSize);
+        uint256 endIndexExclusive = startIndex > effectivePageSize ? startIndex - effectivePageSize : 0;
+        uint256 resultLength = startIndex - endIndexExclusive;
 
-        uint256 endIndexExclusive = totalSessions - ((page - 1) * effectivePageSize);
-        if (endIndexExclusive > totalSessions) {
-            endIndexExclusive = totalSessions;
-        }
-
-        uint256 count = endIndexExclusive - startIndex;
-        SessionDataEntry[] memory results = new SessionDataEntry[](count);
+        SessionDataEntry[] memory results = new SessionDataEntry[](resultLength);
 
         uint256 resultIndex = 0;
-        for (uint256 i = endIndexExclusive; i > startIndex; i--) {
+        for (uint256 i = startIndex; i > endIndexExclusive; i--) {
             string memory sessionID = sessionIDs[i - 1];
-            results[resultIndex] = sessionData[sessionID];
+            SessionDataEntry storage storedEntry = sessionData[sessionID];
+
+            SessionDataEntry memory copiedEntry;
+            copiedEntry.txHash = storedEntry.txHash;
+            copiedEntry.logs = new LogEntry[](storedEntry.logs.length);
+
+            for (uint256 j = 0; j < storedEntry.logs.length; j++) {
+                LogEntry storage storedLog = storedEntry.logs[j];
+                LogEntry memory copiedLog;
+                copiedLog.userRequest = storedLog.userRequest;
+                copiedLog.response = storedLog.response;
+                copiedLog.toolCalls = new ToolCall[](storedLog.toolCalls.length);
+
+                for (uint256 k = 0; k < storedLog.toolCalls.length; k++) {
+                    ToolCall storage storedToolCall = storedLog.toolCalls[k];
+                    copiedLog.toolCalls[k] = ToolCall({
+                        name: storedToolCall.name,
+                        args: storedToolCall.args,
+                        result: storedToolCall.result
+                    });
+                }
+
+                copiedEntry.logs[j] = copiedLog;
+            }
+
+            results[resultIndex] = copiedEntry;
             resultIndex++;
         }
 

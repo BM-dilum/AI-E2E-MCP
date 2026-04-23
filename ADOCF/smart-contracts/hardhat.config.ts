@@ -1,10 +1,8 @@
+import { HardhatUserConfig } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 import "dotenv/config";
-import { HardhatUserConfig } from "hardhat/config";
 
 const DEPLOYER_PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY ? [process.env.DEPLOYER_PRIVATE_KEY] : [];
-const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL ?? "";
-const POLYGON_RPC_URL = process.env.POLYGON_RPC_URL ?? "";
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -16,23 +14,21 @@ const config: HardhatUserConfig = {
       },
     },
   },
-  defaultNetwork: "hardhat",
-  networks: {
-    hardhat: {},
-    sepolia: {
-      url: SEPOLIA_RPC_URL,
-      accounts: DEPLOYER_PRIVATE_KEY,
-    },
-    polygonAmoy: {
-      url: POLYGON_RPC_URL,
-      accounts: DEPLOYER_PRIVATE_KEY,
-    },
-  },
   paths: {
     sources: "./contracts",
     tests: "./test",
     cache: "./cache",
     artifacts: "./artifacts",
+  },
+  networks: {
+    sepolia: {
+      url: process.env.SEPOLIA_RPC_URL || "",
+      accounts: DEPLOYER_PRIVATE_KEY,
+    },
+    polygonAmoy: {
+      url: process.env.POLYGON_RPC_URL || "",
+      accounts: DEPLOYER_PRIVATE_KEY,
+    },
   },
   typechain: {
     outDir: "typechain-types",

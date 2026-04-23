@@ -2,7 +2,7 @@
   "name": "adocf-smart-contracts",
   "version": "1.0.0",
   "private": true,
-  "description": "ADOCF Hardhat smart contracts project",
+  "description": "Hardhat smart contracts project for ADOCF",
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
@@ -13,9 +13,9 @@
     "mint": "hardhat run scripts/mint.ts"
   },
   "devDependencies": {
-    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
     "dotenv": "^16.4.5",
-    "hardhat": "^2.22.17",
+    "hardhat": "^2.22.10",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4"
   },

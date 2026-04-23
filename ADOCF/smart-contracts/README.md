@@ -17,7 +17,7 @@ An ERC20 token contract with burn and owner-controlled minting capabilities.
   - `transferTokens(address to, uint256 amount)` — transfer tokens from caller to recipient
 - Custom events:
   - `Minted(address indexed to, uint256 amount)`
-  - `Burned(address indexed from, uint256 amount)`
+  - `Burned(address indexed from, address indexed to, uint256 amount)`
   - `TokenTransferred(address indexed from, address indexed to, uint256 amount)`
 
 Deployment targets:
@@ -127,7 +127,7 @@ npx hardhat run scripts/mint.ts --network sepolia
 | --- | --- | --- |
 | `SEPOLIA_RPC_URL` | RPC endpoint for Sepolia | `https://sepolia.infura.io/v3/YOUR_KEY` |
 | `POLYGON_RPC_URL` | RPC endpoint for Polygon Amoy | `https://polygon-amoy.infura.io/v3/YOUR_KEY` |
-| `DEPLOYER_PRIVATE_KEY` | Private key used for deployment | `your_private_key` |
+| `DEPLOYER_PRIVATE_KEY` | 0x-prefixed 32-byte hex private key used for deployment; must be 64 hex characters after `0x` (for example, `0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef`) | `0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef` |
 | `TOKEN_NAME` | Token name used by deployment script | `XAU Dollar` |
 | `TOKEN_SYMBOL` | Token symbol used by deployment script | `XAU$` |
 | `MINT_AMOUNT` | Amount to mint in deployment/mint scripts | `1000000` |

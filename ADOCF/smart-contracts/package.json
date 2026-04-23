@@ -1,0 +1,25 @@
+{
+  "name": "adocf-smart-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "ADOCF Hardhat smart contracts project",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:sepolia": "hardhat run scripts/1_token.ts --network sepolia",
+    "deploy:polygon": "hardhat run scripts/1_token.ts --network polygonAmoy",
+    "deploy:logging:sepolia": "hardhat run scripts/2_loggingContract.ts --network sepolia",
+    "deploy:logging:polygon": "hardhat run scripts/2_loggingContract.ts --network polygonAmoy",
+    "mint": "hardhat run scripts/mint.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^6.1.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.17",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.5.4"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2"
+  }
+}

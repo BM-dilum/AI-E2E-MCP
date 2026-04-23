@@ -78,7 +78,7 @@ contract LoggingContract {
             return (new SessionDataEntry[](0), 0);
         }
 
-        totalPages = (totalSessions + effectivePageSize - 1) / effectivePageSize;
+        totalPages = (totalSessions - 1) / effectivePageSize + 1;
 
         if (page == 0 || page > totalPages) {
             return (new SessionDataEntry[](0), totalPages);

@@ -1,5 +1,7 @@
 import { ethers } from "hardhat";
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
 async function main() {
   const tokenContractAddress = process.env.TOKEN_CONTRACT_ADDRESS;
   const mintAmountInput = process.env.MINT_AMOUNT;
@@ -21,8 +23,16 @@ async function main() {
     throw new Error(`MINT_TO_ADDRESS is not a valid EVM address: ${mintToAddress}`);
   }
 
+  if (mintToAddress.toLowerCase() === ZERO_ADDRESS.toLowerCase()) {
+    throw new Error("MINT_TO_ADDRESS cannot be the zero address");
+  }
+
   if (!ethers.isAddress(tokenContractAddress)) {
     throw new Error(`TOKEN_CONTRACT_ADDRESS is not a valid EVM address: ${tokenContractAddress}`);
+  }
+
+  if (tokenContractAddress.toLowerCase() === ZERO_ADDRESS.toLowerCase()) {
+    throw new Error("TOKEN_CONTRACT_ADDRESS cannot be the zero address");
   }
 
   const [deployer] = await ethers.getSigners();

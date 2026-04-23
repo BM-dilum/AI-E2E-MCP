@@ -1,4 +1,4 @@
-pragma solidity 0.8.0;
+pragma solidity 0.8.28;
 
 contract LoggingContract {
     struct ToolCall {
@@ -19,6 +19,7 @@ contract LoggingContract {
     }
 
     mapping(string => SessionDataEntry) private sessionData;
+    mapping(string => address) private sessionOwners;
     string[] private sessionIDs;
 
     uint256 public constant DEFAULT_PAGE_SIZE = 10;
@@ -30,11 +31,16 @@ contract LoggingContract {
         LogEntry[] memory logEntries,
         string memory txHash
     ) external {
-        if (bytes(sessionData[sessionID].txHash).length == 0 && sessionData[sessionID].logs.length == 0) {
+        SessionDataEntry storage entry = sessionData[sessionID];
+        address owner = sessionOwners[sessionID];
+
+        if (owner == address(0)) {
+            sessionOwners[sessionID] = msg.sender;
             sessionIDs.push(sessionID);
+        } else {
+            require(owner == msg.sender, "Not session owner");
         }
 
-        SessionDataEntry storage entry = sessionData[sessionID];
         delete entry.logs;
 
         for (uint256 i = 0; i < logEntries.length; i++) {

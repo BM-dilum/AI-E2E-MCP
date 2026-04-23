@@ -9,6 +9,10 @@ async function main() {
   const mintAmount = process.env.MINT_AMOUNT;
   const mintToAddress = process.env.MINT_TO_ADDRESS;
 
+  if ((mintAmount && !mintToAddress) || (!mintAmount && mintToAddress)) {
+    throw new Error("Both MINT_AMOUNT and MINT_TO_ADDRESS must be provided together.");
+  }
+
   const Token = await ethers.getContractFactory("Token");
   const token = await Token.deploy(tokenName, tokenSymbol);
 

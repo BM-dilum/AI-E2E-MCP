@@ -15,6 +15,7 @@ contract LoggingContract {
     }
 
     struct SessionDataEntry {
+        string sessionID;
         LogEntry[] logs;
         string txHash;
     }
@@ -44,6 +45,7 @@ contract LoggingContract {
             require(owner == msg.sender, "Not session owner");
         }
 
+        entry.sessionID = sessionID;
         delete entry.logs;
 
         for (uint256 i = 0; i < logEntries.length; i++) {
@@ -94,6 +96,7 @@ contract LoggingContract {
             SessionDataEntry storage storedEntry = sessionData[sessionID];
 
             SessionDataEntry memory copiedEntry;
+            copiedEntry.sessionID = storedEntry.sessionID;
             copiedEntry.txHash = storedEntry.txHash;
             copiedEntry.logs = new LogEntry[](storedEntry.logs.length);
 

@@ -26,6 +26,7 @@ async function main() {
   }
 
   const [deployer] = await ethers.getSigners();
+  const deployerAddress = await deployer.getAddress();
   const token = await ethers.getContractAt("Token", tokenContractAddress, deployer);
 
   let decimals: bigint;
@@ -33,6 +34,19 @@ async function main() {
     decimals = await token.decimals();
   } catch (error) {
     throw new Error(`Failed to read token decimals from contract ${tokenContractAddress}: ${(error as Error).message}`);
+  }
+
+  let ownerAddress: string;
+  try {
+    ownerAddress = await token.owner();
+  } catch (error) {
+    throw new Error(`Failed to read token owner from contract ${tokenContractAddress}: ${(error as Error).message}`);
+  }
+
+  if (ownerAddress.toLowerCase() !== deployerAddress.toLowerCase()) {
+    throw new Error(
+      `Configured signer ${deployerAddress} is not the token owner for contract ${tokenContractAddress} (owner: ${ownerAddress})`
+    );
   }
 
   let mintAmount: bigint;

@@ -60,8 +60,8 @@ npm run compile
 
 ### Deploy to Sepolia
 Set:
-- `TOKEN_NAME=XAU Dollar`
-- `TOKEN_SYMBOL=XAU$`
+- `TOKEN_NAME="XAU Dollar"`
+- `TOKEN_SYMBOL="XAU$"`
 
 Then run:
 
@@ -69,8 +69,8 @@ npm run deploy:sepolia
 
 ### Deploy to Polygon Amoy
 Set:
-- `TOKEN_NAME=XUS Dollar`
-- `TOKEN_SYMBOL=XUS$`
+- `TOKEN_NAME="XUS Dollar"`
+- `TOKEN_SYMBOL="XUS$"`
 
 Then run:
 
@@ -90,16 +90,26 @@ npm run deploy:logging:polygon
 
 ## Mint Tokens
 
-To mint tokens after deployment, set:
+Before minting, set:
 - `TOKEN_CONTRACT_ADDRESS`
 - `MINT_TO_ADDRESS`
 - `MINT_AMOUNT`
 
-Then run:
+### Mint on Sepolia
+Run:
 
-npm run mint
+npm run mint:sepolia
 
-The mint script connects to the deployed Token contract and mints the specified amount to the target address.
+Use this script for the Sepolia network.
+
+### Mint on Polygon Amoy
+Run:
+
+npm run mint:polygon
+
+Use this script for the Polygon Amoy network.
+
+The mint scripts connect to the deployed Token contract and mint the specified amount to the target address.
 
 ## Environment Variables
 
@@ -107,9 +117,9 @@ The mint script connects to the deployed Token contract and mints the specified 
 | --- | --- | --- |
 | `SEPOLIA_RPC_URL` | RPC URL for Sepolia | `https://sepolia.infura.io/v3/YOUR_KEY` |
 | `POLYGON_RPC_URL` | RPC URL for Polygon Amoy | `https://polygon-amoy.infura.io/v3/YOUR_KEY` |
-| `DEPLOYER_PRIVATE_KEY` | Private key for deployment wallet | `your_private_key` |
-| `TOKEN_NAME` | Token name used by deployment script | `XAU Dollar` |
-| `TOKEN_SYMBOL` | Token symbol used by deployment script | `XAU$` |
+| `DEPLOYER_PRIVATE_KEY` | Private key for deployment wallet | `0xyour_private_key` |
+| `TOKEN_NAME` | Token name used by deployment script | `"XAU Dollar"` |
+| `TOKEN_SYMBOL` | Token symbol used by deployment script | `"XAU$"` |
 | `MINT_AMOUNT` | Amount to mint in deployment/mint scripts | `1000000` |
 | `MINT_TO_ADDRESS` | Recipient address for minting | `0x...` |
 | `TOKEN_CONTRACT_ADDRESS` | Deployed Token contract address | `0x...` |

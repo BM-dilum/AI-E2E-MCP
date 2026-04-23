@@ -1,6 +1,9 @@
-pragma solidity 0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.28;
 
 contract LoggingContract {
+    address public owner;
+
     struct ToolCall {
         string name;
         string args;
@@ -18,23 +21,47 @@ contract LoggingContract {
         string txHash;
     }
 
+    struct SessionRecord {
+        string sessionID;
+        string txHash;
+    }
+
     mapping(string => SessionDataEntry) private sessionData;
-    string[] private sessionIDs;
+    mapping(string => uint256) private sessionRecordIndexPlusOne;
+    SessionRecord[] private sessionRecords;
 
     uint256 public constant DEFAULT_PAGE_SIZE = 10;
+    uint256 public constant MAX_PAGE_SIZE = 100;
 
-    event LogsUploaded(string indexed sessionID, LogEntry[] logEntries, string txHash);
+    event LogsUploaded(string indexed sessionID, string txHash);
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "LoggingContract: caller is not the owner");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+        emit OwnershipTransferred(address(0), msg.sender);
+    }
+
+    function transferOwnership(address newOwner) external onlyOwner {
+        require(newOwner != address(0), "LoggingContract: new owner is the zero address");
+        address previousOwner = owner;
+        owner = newOwner;
+        emit OwnershipTransferred(previousOwner, newOwner);
+    }
 
     function uploadLogs(
         string memory sessionID,
         LogEntry[] memory logEntries,
         string memory txHash
-    ) external {
-        if (bytes(sessionData[sessionID].txHash).length == 0 && sessionData[sessionID].logs.length == 0) {
-            sessionIDs.push(sessionID);
-        }
+    ) external onlyOwner {
+        require(bytes(sessionID).length != 0, "LoggingContract: empty sessionID");
 
         SessionDataEntry storage entry = sessionData[sessionID];
+
         delete entry.logs;
 
         for (uint256 i = 0; i < logEntries.length; i++) {
@@ -57,7 +84,15 @@ contract LoggingContract {
 
         entry.txHash = txHash;
 
-        emit LogsUploaded(sessionID, logEntries, txHash);
+        uint256 recordIndexPlusOne = sessionRecordIndexPlusOne[sessionID];
+        if (recordIndexPlusOne == 0) {
+            sessionRecords.push(SessionRecord({sessionID: sessionID, txHash: txHash}));
+            sessionRecordIndexPlusOne[sessionID] = sessionRecords.length;
+        } else {
+            sessionRecords[recordIndexPlusOne - 1].txHash = txHash;
+        }
+
+        emit LogsUploaded(sessionID, txHash);
     }
 
     function getLogs(uint256 page, uint256 pageSize)
@@ -66,7 +101,10 @@ contract LoggingContract {
         returns (SessionDataEntry[] memory, uint256 totalPages)
     {
         uint256 effectivePageSize = pageSize == 0 ? DEFAULT_PAGE_SIZE : pageSize;
-        uint256 totalSessions = sessionIDs.length;
+        require(effectivePageSize > 0, "LoggingContract: page size must be greater than zero");
+        require(effectivePageSize <= MAX_PAGE_SIZE, "LoggingContract: page size exceeds maximum");
+
+        uint256 totalSessions = sessionRecords.length;
 
         if (totalSessions == 0) {
             return (new SessionDataEntry[](0), 0);
@@ -86,7 +124,7 @@ contract LoggingContract {
 
         uint256 resultIndex = 0;
         for (uint256 i = startIndex; i > endExclusive; i--) {
-            string memory sessionID = sessionIDs[i - 1];
+            string memory sessionID = sessionRecords[i - 1].sessionID;
             SessionDataEntry storage storedEntry = sessionData[sessionID];
 
             SessionDataEntry memory copiedEntry;
@@ -115,6 +153,13 @@ contract LoggingContract {
     }
 
     function getSessionIDs() external view returns (string[] memory) {
-        return sessionIDs;
+        uint256 totalSessions = sessionRecords.length;
+        string[] memory ids = new string[](totalSessions);
+
+        for (uint256 i = 0; i < totalSessions; i++) {
+            ids[i] = sessionRecords[i].sessionID;
+        }
+
+        return ids;
     }
 }

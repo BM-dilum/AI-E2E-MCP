@@ -54,6 +54,20 @@ cp .env.example .env
 - `MINT_TO_ADDRESS` - Address to receive minted tokens in `mint.ts`
 - `TOKEN_CONTRACT_ADDRESS` - Deployed Token contract address for minting
 
+## Security Guidance for DEPLOYER_PRIVATE_KEY
+
+- Never commit `.env` files or any private keys to version control.
+- Add `.env`, `.env.*`, and other secret-bearing files to `.gitignore`.
+- Use a dedicated low-funds deploy-only account for deployments and minting; do not use a primary wallet or long-term treasury key.
+- Keep the deployer account funded with only the minimum native gas token needed for the target network.
+- Prefer secrets managers or encrypted CI/CD secret stores for production usage instead of storing keys on developer machines.
+- In CI, inject `DEPLOYER_PRIVATE_KEY` and other secrets as protected environment variables or masked secrets; do not hardcode them in workflow files.
+- For local development, store secrets only in a local `.env` file with restrictive file permissions, such as `chmod 600 .env` on Unix-like systems.
+- Limit access to the machine and user account that can read the private key.
+- Rotate the deployer key regularly and immediately if exposure is suspected.
+- Use separate keys for local development, test deployments, and production deployments.
+- Review logs, shell history, and editor backups to ensure secrets are not accidentally exposed.
+
 ## Compile
 
 Compile the contracts:

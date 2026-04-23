@@ -93,7 +93,7 @@ export class GithubTools {
   commitAndPush(repoPath?: string) {
     return tool(
       async ({ branch, message }) => {
-        const passed = this.gitService.runTests();
+        const passed = this.gitService.runTests(repoPath);
         if (!passed) return 'PUSH_BLOCKED: tests are still failing';
 
         const pushed = this.gitService.commitAndPush(branch, message, repoPath);
@@ -149,7 +149,7 @@ export class GithubTools {
   waitForReview() {
     return tool(
       async ({ prNumber }) => {
-        return await this.githubService.waitForReview(prNumber);
+        return await this.githubService.waitForReview(prNumber, 600000, true);
       },
       {
         name: 'wait_for_review',

@@ -49,6 +49,10 @@ export class AgentService {
     return /^approved\b/i.test(result.trim());
   }
 
+  private isFixedResult(result: string): boolean {
+    return /^fixed\b/i.test(result.trim());
+  }
+
   async shipFeature(spec: string, repoPath?: string) {
     this.logger.log('🚀 shipFeature starting');
 
@@ -100,6 +104,11 @@ export class AgentService {
     // Stage 4b: Fix loop — only if needed
     if (!this.isApprovedReviewResult(reviewResult)) {
       for (let round = 1; round <= this.maxFixRounds; round++) {
+        if (await this.githubService.isCodeRabbitApproved(prNumber)) {
+          await this.githubService.mergePR(prNumber);
+          return { success: true, prNumber };
+        }
+
         const { inline, general } =
           await this.githubService.getAllComments(prNumber);
 
@@ -108,6 +117,11 @@ export class AgentService {
         );
 
         if (inline.length === 0 && general.length === 0) {
+          if (await this.githubService.isCodeRabbitApproved(prNumber)) {
+            await this.githubService.mergePR(prNumber);
+            return { success: true, prNumber };
+          }
+
           return {
             success: false,
             message: `PR #${prNumber} still needs review but no CodeRabbit comments were found`,
@@ -131,6 +145,17 @@ export class AgentService {
         if (this.isDoneFixResult(fixResult)) {
           await this.githubService.mergePR(prNumber);
           return { success: true, prNumber };
+        }
+
+        if (this.isFixedResult(fixResult)) {
+          await this.githubService.triggerReview(prNumber);
+          const latestReviewResult =
+            await this.githubService.waitForReview(prNumber);
+
+          if (this.isApprovedReviewResult(latestReviewResult)) {
+            await this.githubService.mergePR(prNumber);
+            return { success: true, prNumber };
+          }
         }
 
         if (round === this.maxFixRounds) {

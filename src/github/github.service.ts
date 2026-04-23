@@ -20,6 +20,7 @@ export interface Comment {
 interface LatestCodeRabbitReview {
   id: number | null;
   submittedAt: string | null;
+  state: string | null;
 }
 
 @Injectable()
@@ -89,14 +90,27 @@ export class GithubService {
     );
 
     if (coderabbitReviews.length === 0) {
-      return { id: null, submittedAt: null };
+      return { id: null, submittedAt: null, state: null };
     }
 
     const latest = coderabbitReviews[coderabbitReviews.length - 1];
     return {
       id: latest.id,
       submittedAt: latest.submitted_at ?? null,
+      state: latest.state ?? null,
     };
+  }
+
+  async getLatestCodeRabbitReviewState(
+    prNumber: number,
+  ): Promise<string | null> {
+    const latestReview = await this.getLatestCodeRabbitReview(prNumber);
+    return latestReview.state;
+  }
+
+  async isCodeRabbitApproved(prNumber: number): Promise<boolean> {
+    const state = await this.getLatestCodeRabbitReviewState(prNumber);
+    return state?.toUpperCase() === 'APPROVED';
   }
 
   //get all unresolved coderabbit pr comments
@@ -291,7 +305,11 @@ export class GithubService {
   }
 
   //wait for CodeRabbit to submit a review
-  async waitForReview(prNumber: number, timeoutMs = 600000): Promise<string> {
+  async waitForReview(
+    prNumber: number,
+    timeoutMs = 600000,
+    acceptExistingApproval = false,
+  ): Promise<string> {
     this.logger.log('⏳ Waiting for CodeRabbit review...');
 
     const interval = 30000;
@@ -311,7 +329,16 @@ export class GithubService {
     );
 
     if (existingCoderabbit.length > 0) {
-      lastReviewId = existingCoderabbit[existingCoderabbit.length - 1].id;
+      const latestExisting = existingCoderabbit[existingCoderabbit.length - 1];
+      lastReviewId = latestExisting.id;
+
+      if (
+        acceptExistingApproval &&
+        latestExisting.state?.toUpperCase() === 'APPROVED'
+      ) {
+        this.logger.log('CodeRabbit already approved this PR');
+        return 'APPROVED';
+      }
     }
 
     //poll for new review
@@ -333,6 +360,17 @@ export class GithubService {
         const latest = coderabbitReviews[coderabbitReviews.length - 1];
         this.logger.log(`📋 CodeRabbit state: ${latest.state}`);
         return latest.state;
+      }
+
+      const latestCodeRabbitReview = reviews
+        .filter((r) => r.user?.login.includes('coderabbit'))
+        .at(-1);
+      if (
+        acceptExistingApproval &&
+        latestCodeRabbitReview?.state?.toUpperCase() === 'APPROVED'
+      ) {
+        this.logger.log('CodeRabbit approved this PR');
+        return 'APPROVED';
       }
 
       this.logger.log(`⏳ Still waiting... attempt ${attempts}/${maxAttempts}`);

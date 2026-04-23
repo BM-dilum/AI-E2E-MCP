@@ -40,6 +40,10 @@ export class GithubFixAgent {
       return normalized;
     }
 
+    if (/^fixed\b/i.test(normalized)) {
+      return normalized;
+    }
+
     return `NEEDS_REVIEW prNumber=unknown raw=${JSON.stringify(normalized)}`;
   }
 
@@ -74,7 +78,6 @@ export class GithubFixAgent {
         this.githubTools.runTests(repoPath),
         this.githubTools.commitAndPush(repoPath),
         this.githubTools.resolveComments(),
-        this.githubTools.triggerAndWaitForReview(),
         // this.githubTools.mergePR(),
       ],
       systemPrompt: `
@@ -91,10 +94,7 @@ export class GithubFixAgent {
       2. run_tests — if failing, fix again max 3 times, never push if failing
       3. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
       4. resolve_comments prNumber=${prNumber}
-      5. trigger_and_wait_for_review prNumber=${prNumber}
-      6. If APPROVED → stop, return: APPROVED prNumber=${prNumber}
-      7. If timed_out → stop, return: TIMED_OUT prNumber=${prNumber}
-      8. If COMMENTED or CHANGES_REQUESTED → stop, return: NEEDS_REVIEW prNumber=${prNumber}
+      5. stop, return: FIXED prNumber=${prNumber}
 
       RULES:
       - First tool call MUST be fix_file — not anything else
@@ -109,7 +109,7 @@ export class GithubFixAgent {
       messages: [
         {
           role: 'user',
-          content: `Fix and merge PR #${prNumber} on branch ${branch}. Use prNumber=${prNumber} for ALL tool calls.`,
+          content: `Fix PR #${prNumber} on branch ${branch}. Use prNumber=${prNumber} for ALL tool calls.`,
         },
       ],
     });

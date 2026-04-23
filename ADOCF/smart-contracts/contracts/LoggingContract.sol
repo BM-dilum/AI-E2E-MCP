@@ -48,6 +48,7 @@ contract LoggingContract {
     function setSessionWriter(string memory sessionID, address writer) external onlyOwner {
         SessionDataEntry storage entry = sessionData[sessionID];
         require(entry.exists, "Session does not exist");
+        require(writer != address(0), "Invalid writer");
         entry.authorizedWriter = writer;
     }
 

@@ -284,7 +284,7 @@ export class GithubService {
       owner: this.owner,
       repo: this.repo,
       issue_number: prNumber,
-      body: '@coderabbitai full review',
+      body: '@coderabbitai review',
     });
 
     this.logger.log(`Triggered CodeRabbit review for PR #${prNumber}`);

@@ -10,6 +10,10 @@ async function main(): Promise<void> {
   const mintAmount = mintAmountEnv ? ethers.parseUnits(mintAmountEnv, 18) : undefined;
 
   const [deployer] = await ethers.getSigners();
+  if (!deployer) {
+    throw new Error("No deployer signer available. Please configure a valid network account before running this script.");
+  }
+
   console.log(`Deploying Token with account: ${deployer.address}`);
   console.log(`Token name: ${tokenName}`);
   console.log(`Token symbol: ${tokenSymbol}`);

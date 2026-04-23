@@ -1,21 +1,25 @@
-pragma solidity 0.8.0;
+pragma solidity ^0.8.28;
 
 contract LoggingContract {
+    address public owner;
+
     struct ToolCall {
-        string name;
-        string args;
-        string result;
+        bytes32 nameHash;
+        bytes32 argsHash;
+        bytes32 resultHash;
     }
 
     struct LogEntry {
-        string userRequest;
-        string response;
+        bytes32 userRequestHash;
+        bytes32 responseHash;
         ToolCall[] toolCalls;
     }
 
     struct SessionDataEntry {
         LogEntry[] logs;
         string txHash;
+        bool exists;
+        address authorizedWriter;
     }
 
     mapping(string => SessionDataEntry) private sessionData;
@@ -23,41 +27,69 @@ contract LoggingContract {
 
     uint256 public constant DEFAULT_PAGE_SIZE = 10;
 
-    event LogsUploaded(string indexed sessionID, LogEntry[] logEntries, string txHash);
+    event LogsUploaded(string indexed sessionID, bytes32 logsHash, string txHash);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Not authorized");
+        _;
+    }
+
+    modifier onlySessionWriter(string memory sessionID) {
+        SessionDataEntry storage entry = sessionData[sessionID];
+        require(entry.exists, "Session does not exist");
+        require(msg.sender == owner || msg.sender == entry.authorizedWriter, "Not authorized");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function setSessionWriter(string memory sessionID, address writer) external onlyOwner {
+        SessionDataEntry storage entry = sessionData[sessionID];
+        require(entry.exists, "Session does not exist");
+        entry.authorizedWriter = writer;
+    }
 
     function uploadLogs(
         string memory sessionID,
         LogEntry[] memory logEntries,
         string memory txHash
     ) external {
-        if (bytes(sessionData[sessionID].txHash).length == 0) {
+        SessionDataEntry storage entry = sessionData[sessionID];
+
+        if (!entry.exists) {
+            entry.exists = true;
             sessionIDs.push(sessionID);
         }
 
-        SessionDataEntry storage entry = sessionData[sessionID];
+        require(msg.sender == owner || msg.sender == entry.authorizedWriter || entry.authorizedWriter == address(0), "Not authorized");
+
         delete entry.logs;
+
+        bytes32 logsHash = keccak256(abi.encode(logEntries));
 
         for (uint256 i = 0; i < logEntries.length; i++) {
             LogEntry memory logEntry = logEntries[i];
             entry.logs.push();
 
             LogEntry storage storedLog = entry.logs[entry.logs.length - 1];
-            storedLog.userRequest = logEntry.userRequest;
-            storedLog.response = logEntry.response;
+            storedLog.userRequestHash = logEntry.userRequestHash;
+            storedLog.responseHash = logEntry.responseHash;
 
             for (uint256 j = 0; j < logEntry.toolCalls.length; j++) {
                 ToolCall memory toolCall = logEntry.toolCalls[j];
                 storedLog.toolCalls.push(ToolCall({
-                    name: toolCall.name,
-                    args: toolCall.args,
-                    result: toolCall.result
+                    nameHash: toolCall.nameHash,
+                    argsHash: toolCall.argsHash,
+                    resultHash: toolCall.resultHash
                 }));
             }
         }
 
         entry.txHash = txHash;
 
-        emit LogsUploaded(sessionID, logEntries, txHash);
+        emit LogsUploaded(sessionID, logsHash, txHash);
     }
 
     function getLogs(uint256 page, uint256 pageSize)
@@ -91,21 +123,23 @@ contract LoggingContract {
 
             SessionDataEntry memory copiedEntry;
             copiedEntry.txHash = storedEntry.txHash;
+            copiedEntry.exists = storedEntry.exists;
+            copiedEntry.authorizedWriter = storedEntry.authorizedWriter;
             copiedEntry.logs = new LogEntry[](storedEntry.logs.length);
 
             for (uint256 j = 0; j < storedEntry.logs.length; j++) {
                 LogEntry storage storedLog = storedEntry.logs[j];
                 LogEntry memory copiedLog;
-                copiedLog.userRequest = storedLog.userRequest;
-                copiedLog.response = storedLog.response;
+                copiedLog.userRequestHash = storedLog.userRequestHash;
+                copiedLog.responseHash = storedLog.responseHash;
                 copiedLog.toolCalls = new ToolCall[](storedLog.toolCalls.length);
 
                 for (uint256 k = 0; k < storedLog.toolCalls.length; k++) {
                     ToolCall storage storedToolCall = storedLog.toolCalls[k];
                     copiedLog.toolCalls[k] = ToolCall({
-                        name: storedToolCall.name,
-                        args: storedToolCall.args,
-                        result: storedToolCall.result
+                        nameHash: storedToolCall.nameHash,
+                        argsHash: storedToolCall.argsHash,
+                        resultHash: storedToolCall.resultHash
                     });
                 }
 
@@ -119,7 +153,7 @@ contract LoggingContract {
         return (results, totalPages);
     }
 
-    function getSessionIDs() external view returns (string[] memory) {
+    function getSessionIDs() external view onlyOwner returns (string[] memory) {
         return sessionIDs;
     }
 }

@@ -96,6 +96,8 @@ Then run:
 
 npm run mint
 
+`MINT_AMOUNT` is a human-readable whole-token amount. The mint script converts it with `parseUnits(mintAmount, 18)` before calling the contract, so for an 18-decimal token, `1` means 1 token and `1000000` means 1,000,000 tokens.
+
 If `MINT_AMOUNT` is also set during token deployment, the deploy script may mint to the deployer wallet automatically depending on the script configuration.
 
 ## Environment Variables
@@ -107,7 +109,7 @@ If `MINT_AMOUNT` is also set during token deployment, the deploy script may mint
 | `DEPLOYER_PRIVATE_KEY` | Private key used for deployment | `your_private_key` |
 | `TOKEN_NAME` | ERC20 token name | `XAU Dollar` |
 | `TOKEN_SYMBOL` | ERC20 token symbol | `XAU$` |
-| `MINT_AMOUNT` | Amount to mint, in token base units | `1000000` |
+| `MINT_AMOUNT` | Human-readable whole-token amount to mint; converted with `parseUnits(mintAmount, 18)` | `1000000` |
 | `MINT_TO_ADDRESS` | Recipient address for minting | `0x...` |
 | `TOKEN_CONTRACT_ADDRESS` | Deployed token contract address | `0x...` |
 

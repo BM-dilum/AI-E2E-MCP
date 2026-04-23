@@ -1,6 +1,9 @@
+// SPDX-License-Identifier: MIT
 pragma solidity 0.8.0;
 
-contract LoggingContract {
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract LoggingContract is Ownable {
     struct ToolCall {
         string name;
         string args;
@@ -29,10 +32,30 @@ contract LoggingContract {
         string memory sessionID,
         LogEntry[] memory logEntries,
         string memory txHash
-    ) external {
-        bool isNewSession = bytes(sessionData[sessionID].txHash).length == 0 && sessionData[sessionID].logs.length == 0;
+    ) external onlyOwner {
+        SessionDataEntry storage session = sessionData[sessionID];
+        bool isNewSession = bytes(session.txHash).length == 0 && session.logs.length == 0;
 
-        sessionData[sessionID] = SessionDataEntry({logs: logEntries, txHash: txHash});
+        delete session.logs;
+        session.txHash = txHash;
+
+        for (uint256 i = 0; i < logEntries.length; i++) {
+            LogEntry memory logEntry = logEntries[i];
+            session.logs.push();
+
+            LogEntry storage storedLog = session.logs[session.logs.length - 1];
+            storedLog.userRequest = logEntry.userRequest;
+            storedLog.response = logEntry.response;
+
+            for (uint256 j = 0; j < logEntry.toolCalls.length; j++) {
+                ToolCall memory toolCall = logEntry.toolCalls[j];
+                storedLog.toolCalls.push(ToolCall({
+                    name: toolCall.name,
+                    args: toolCall.args,
+                    result: toolCall.result
+                }));
+            }
+        }
 
         if (isNewSession) {
             sessionIDs.push(sessionID);

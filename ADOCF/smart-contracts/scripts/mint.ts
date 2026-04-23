@@ -19,7 +19,7 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
   const token = await ethers.getContractAt("Token", tokenAddress, deployer);
-  const amount = ethers.parseUnits(mintAmount, 18);
+  const amount = BigInt(mintAmount);
 
   const tx = await token.mint(mintToAddress, amount);
   await tx.wait();

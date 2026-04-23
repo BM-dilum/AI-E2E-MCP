@@ -10,7 +10,9 @@
     "deploy:sepolia": "hardhat run scripts/1_token.ts --network sepolia",
     "deploy:polygon": "hardhat run scripts/1_token.ts --network polygonAmoy",
     "deploy:logging:sepolia": "hardhat run scripts/2_loggingContract.ts --network sepolia",
-    "deploy:logging:polygon": "hardhat run scripts/2_loggingContract.ts --network polygonAmoy"
+    "deploy:logging:polygon": "hardhat run scripts/2_loggingContract.ts --network polygonAmoy",
+    "mint:sepolia": "hardhat run scripts/3_mint.ts --network sepolia",
+    "mint:polygon": "hardhat run scripts/3_mint.ts --network polygonAmoy"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^5.0.0",

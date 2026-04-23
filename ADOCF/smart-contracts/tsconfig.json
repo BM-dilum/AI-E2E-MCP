@@ -10,9 +10,9 @@
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
     "types": ["node", "hardhat"],
-    "outDir": "dist"
+    "outDir": "./dist"
   },
-  "include": ["./scripts", "./test", "./hardhat.config.ts", "./typechain-types"],
+  "include": ["./scripts", "./test", "./hardhat.config.ts"],
   "files": [],
-  "exclude": ["node_modules", "dist"]
+  "references": []
 }

@@ -30,13 +30,32 @@ contract LoggingContract {
         LogEntry[] memory logEntries,
         string memory txHash
     ) external {
-        bool isNewSession = bytes(sessionData[sessionID].txHash).length == 0 && sessionData[sessionID].logs.length == 0;
-
-        sessionData[sessionID] = SessionDataEntry({logs: logEntries, txHash: txHash});
-
-        if (isNewSession) {
+        if (bytes(sessionData[sessionID].txHash).length == 0 && sessionData[sessionID].logs.length == 0) {
             sessionIDs.push(sessionID);
         }
+
+        SessionDataEntry storage entry = sessionData[sessionID];
+        delete entry.logs;
+
+        for (uint256 i = 0; i < logEntries.length; i++) {
+            LogEntry memory sourceLog = logEntries[i];
+            ToolCall[] memory sourceToolCalls = sourceLog.toolCalls;
+
+            entry.logs.push();
+            LogEntry storage storedLog = entry.logs[entry.logs.length - 1];
+            storedLog.userRequest = sourceLog.userRequest;
+            storedLog.response = sourceLog.response;
+
+            for (uint256 j = 0; j < sourceToolCalls.length; j++) {
+                storedLog.toolCalls.push();
+                ToolCall storage storedToolCall = storedLog.toolCalls[storedLog.toolCalls.length - 1];
+                storedToolCall.name = sourceToolCalls[j].name;
+                storedToolCall.args = sourceToolCalls[j].args;
+                storedToolCall.result = sourceToolCalls[j].result;
+            }
+        }
+
+        entry.txHash = txHash;
 
         emit LogsUploaded(sessionID, logEntries, txHash);
     }
@@ -59,23 +78,36 @@ contract LoggingContract {
             return (new SessionDataEntry[](0), totalPages);
         }
 
-        uint256 startIndex = totalSessions - (page * effectivePageSize);
-        if (page * effectivePageSize > totalSessions) {
-            startIndex = 0;
-        }
+        uint256 startIndex = totalSessions - ((page - 1) * effectivePageSize);
+        uint256 endExclusive = startIndex > effectivePageSize ? startIndex - effectivePageSize : 0;
+        uint256 resultLength = startIndex - endExclusive;
 
-        uint256 endIndexExclusive = totalSessions - ((page - 1) * effectivePageSize);
-        if (endIndexExclusive > totalSessions) {
-            endIndexExclusive = totalSessions;
-        }
-
-        uint256 count = endIndexExclusive - startIndex;
-        SessionDataEntry[] memory results = new SessionDataEntry[](count);
+        SessionDataEntry[] memory results = new SessionDataEntry[](resultLength);
 
         uint256 resultIndex = 0;
-        for (uint256 i = endIndexExclusive; i > startIndex; i--) {
+        for (uint256 i = startIndex; i > endExclusive; i--) {
             string memory sessionID = sessionIDs[i - 1];
-            results[resultIndex] = sessionData[sessionID];
+            SessionDataEntry storage storedEntry = sessionData[sessionID];
+
+            SessionDataEntry memory copiedEntry;
+            copiedEntry.txHash = storedEntry.txHash;
+            copiedEntry.logs = new LogEntry[](storedEntry.logs.length);
+
+            for (uint256 j = 0; j < storedEntry.logs.length; j++) {
+                LogEntry storage storedLog = storedEntry.logs[j];
+                copiedEntry.logs[j].userRequest = storedLog.userRequest;
+                copiedEntry.logs[j].response = storedLog.response;
+                copiedEntry.logs[j].toolCalls = new ToolCall[](storedLog.toolCalls.length);
+
+                for (uint256 k = 0; k < storedLog.toolCalls.length; k++) {
+                    ToolCall storage storedToolCall = storedLog.toolCalls[k];
+                    copiedEntry.logs[j].toolCalls[k].name = storedToolCall.name;
+                    copiedEntry.logs[j].toolCalls[k].args = storedToolCall.args;
+                    copiedEntry.logs[j].toolCalls[k].result = storedToolCall.result;
+                }
+            }
+
+            results[resultIndex] = copiedEntry;
             resultIndex++;
         }
 

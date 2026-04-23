@@ -41,11 +41,10 @@ contract LoggingContract {
         emit LogsUploaded(sessionID, logEntries, txHash);
     }
 
-    function getLogs(uint256 page, uint256 pageSize)
-        external
-        view
-        returns (SessionDataEntry[] memory, uint256 totalPages)
-    {
+    function getLogs(
+        uint256 page,
+        uint256 pageSize
+    ) external view returns (SessionDataEntry[] memory, uint256 totalPages) {
         uint256 effectivePageSize = pageSize == 0 ? DEFAULT_PAGE_SIZE : pageSize;
         uint256 totalSessions = sessionIDs.length;
 
@@ -59,23 +58,17 @@ contract LoggingContract {
             return (new SessionDataEntry[](0), totalPages);
         }
 
-        uint256 startIndex = totalSessions - (page * effectivePageSize);
-        if (page * effectivePageSize > totalSessions) {
-            startIndex = 0;
-        }
+        uint256 startIndex = totalSessions - ((page - 1) * effectivePageSize);
+        uint256 endIndexExclusive = startIndex > effectivePageSize ? startIndex - effectivePageSize : 0;
+        uint256 resultLength = startIndex - endIndexExclusive;
 
-        uint256 endIndexExclusive = totalSessions - ((page - 1) * effectivePageSize);
-        if (endIndexExclusive > totalSessions) {
-            endIndexExclusive = totalSessions;
-        }
-
-        uint256 count = endIndexExclusive - startIndex;
-        SessionDataEntry[] memory results = new SessionDataEntry[](count);
-
+        SessionDataEntry[] memory results = new SessionDataEntry[](resultLength);
         uint256 resultIndex = 0;
-        for (uint256 i = endIndexExclusive; i > startIndex; i--) {
+
+        for (uint256 i = startIndex; i > endIndexExclusive; i--) {
             string memory sessionID = sessionIDs[i - 1];
-            results[resultIndex] = sessionData[sessionID];
+            SessionDataEntry storage stored = sessionData[sessionID];
+            results[resultIndex] = stored;
             resultIndex++;
         }
 

@@ -25,7 +25,7 @@ async function main() {
   await tx.wait();
 
   console.log(`Minted ${mintAmount} tokens to ${mintToAddress}`);
-  console.log(`Transaction hash: ${tx.hash}`);
+  console.log(`Token contract: ${tokenAddress}`);
 }
 
 main().catch((error) => {

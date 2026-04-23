@@ -60,10 +60,11 @@ contract LoggingContract {
 
         if (!entry.exists) {
             entry.exists = true;
+            entry.authorizedWriter = msg.sender;
             sessionIDs.push(sessionID);
         }
 
-        require(msg.sender == owner || msg.sender == entry.authorizedWriter || entry.authorizedWriter == address(0), "Not authorized");
+        require(msg.sender == owner || msg.sender == entry.authorizedWriter, "Not authorized");
 
         delete entry.logs;
 

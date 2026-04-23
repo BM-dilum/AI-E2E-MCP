@@ -46,14 +46,15 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const token = await ethers.getContractAt("Token", tokenAddress, deployer);
 
-  const tx = await token.mint(mintToAddress, ethers.parseUnits(mintAmount.trim(), 18));
+  const parsedMintAmount = ethers.parseUnits(mintAmount.trim(), 18);
+  const tx = await token.mint(mintToAddress, parsedMintAmount);
   await tx.wait();
 
   console.log(`Minted ${mintAmount} tokens to ${mintToAddress}`);
   console.log(`Transaction hash: ${tx.hash}`);
 }
 
-main().catch((error) => {
+main().catch((error: unknown) => {
   console.error(error);
   process.exitCode = 1;
 });

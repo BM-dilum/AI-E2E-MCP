@@ -109,6 +109,9 @@ export class AIService {
                     - End with the last line of code
                     - Follow the exact stack specified in the spec
                     - Follow the exact conventions specified in the spec
+                    - If generating package.json, scripts MUST include both "test" and "build"
+                    - The test script must be runnable in CI without watch mode and should pass for the generated project
+                    - The build script must compile or build the generated project
                     - Never add placeholder comments or TODOs
                     - Full working implementation only
                     `,
@@ -164,7 +167,10 @@ export class AIService {
                     - No backticks
                     - No explanations
                     - Start with the first line of code
-                    - End with the last line of code                   
+                    - End with the last line of code
+                    - If fixing package.json, scripts MUST include both "test" and "build"
+                    - The test script must be runnable in CI without watch mode and should pass for the generated project
+                    - The build script must compile or build the generated project
                     `,
         },
         {

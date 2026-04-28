@@ -164,9 +164,23 @@ export class GitService {
       const pkgPath = path.join(root, 'package.json');
       const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 
-      // Check test script first
-      if (pkg.scripts?.test) {
-        return this.exec('npm test', root);
+      if (pkg.scripts) {
+        if (!pkg.scripts.test) {
+          this.logger.error('package.json is missing required test script');
+          return false;
+        }
+
+        if (!pkg.scripts.build) {
+          this.logger.error('package.json is missing required build script');
+          return false;
+        }
+
+        const testsPassed = this.exec('npm test', root);
+        if (!testsPassed) {
+          return false;
+        }
+
+        return this.exec('npm run build', root);
       }
 
       // Detect by dependencies
@@ -190,7 +204,8 @@ export class GitService {
         return this.exec('forge test', root);
       }
 
-      return this.exec('npm test', root);
+      this.logger.error('package.json is missing required scripts object');
+      return false;
     } catch (error) {
       this.logger.error('❌ tests failed');
       return false;

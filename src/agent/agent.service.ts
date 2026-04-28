@@ -121,7 +121,32 @@ export class AgentService {
       return null;
     }
 
-    return JSON.parse(fs.readFileSync(statePath, 'utf8')) as TargetRepoState;
+    try {
+      const raw = fs.readFileSync(statePath, 'utf8').trim();
+      if (!raw) {
+        this.logger.warn(`Ignoring empty target state file: ${statePath}`);
+        return null;
+      }
+
+      const parsed = JSON.parse(raw) as Partial<TargetRepoState>;
+      if (
+        !parsed.owner ||
+        !parsed.repo ||
+        !parsed.defaultBranch ||
+        !parsed.localPath ||
+        !parsed.workPath
+      ) {
+        this.logger.warn(`Ignoring invalid target state file: ${statePath}`);
+        return null;
+      }
+
+      return parsed as TargetRepoState;
+    } catch (error: any) {
+      this.logger.warn(
+        `Ignoring unreadable target state file ${statePath}: ${error.message}`,
+      );
+      return null;
+    }
   }
 
   private writeTargetState(workspaceRoot: string, state: TargetRepoState) {

@@ -11,7 +11,11 @@ export class GitService {
   constructor(private configService: ConfigService) {}
 
   private getBaseBranch(): string {
-    return this.configService.get<string>('GITHUB_BASE_BRANCH') || 'dev';
+    return (
+      this.configService.get<string>('GITHUB_BASE_BRANCH') ||
+      this.configService.get<string>('GITHUB_PR_BASE_BRANCH') ||
+      'dev'
+    );
   }
 
   private getRepoPath(repoPath?: string): string {
@@ -41,6 +45,18 @@ export class GitService {
   createBranch(branch: string, repoPath?: string) {
     const root = this.getRepoPath(repoPath);
     execSync(`git checkout -b ${branch}`, { cwd: root });
+  }
+
+  checkoutOrCreateBranch(branch: string, repoPath?: string) {
+    const root = this.getRepoPath(repoPath);
+    this.exec(`git checkout -B ${branch}`, root);
+    const currentBranch = this.getCurrentBranch(repoPath);
+    if (currentBranch !== branch) {
+      throw new Error(
+        `Expected to be on ${branch}, but current branch is ${currentBranch}`,
+      );
+    }
+    this.logger.log(`Checked out feature branch: ${currentBranch}`);
   }
 
   // checkout existing branch

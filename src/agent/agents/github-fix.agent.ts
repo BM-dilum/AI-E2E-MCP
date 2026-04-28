@@ -48,6 +48,7 @@ export class GithubFixAgent {
     prNumber: number,
     existingComments: { inline: any[]; general: any[] },
     repoPath?: string,
+    repo?: string,
   ) {
     this.logger.log(`🔁 GithubFixAgent: branch=${branch}`);
 
@@ -73,8 +74,8 @@ export class GithubFixAgent {
         this.githubTools.fixFile(repoPath),
         this.githubTools.runTests(repoPath),
         this.githubTools.commitAndPush(repoPath),
-        this.githubTools.resolveComments(),
-        this.githubTools.triggerAndWaitForReview(),
+        this.githubTools.resolveComments(repo),
+        this.githubTools.triggerAndWaitForReview(repo),
         // this.githubTools.mergePR(),
       ],
       systemPrompt: `
@@ -88,7 +89,7 @@ export class GithubFixAgent {
 
       Steps — follow in order:
       1. fix_file for each file in the comments above
-      2. run_tests — if failing, fix again max 3 times, never push if failing
+      2. run_tests — if failing, keep fixing and testing, never push if failing
       3. commit_and_push branch=${branch} message=fix: address CodeRabbit comments
       4. resolve_comments prNumber=${prNumber}
       5. trigger_and_wait_for_review prNumber=${prNumber}

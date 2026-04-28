@@ -13,7 +13,7 @@ export class McpService {
 
     switch (name) {
       case 'ship_feature':
-        return this.agentService.shipFeature(args.spec);
+        return this.agentService.shipFeature(args.spec, args.repoPath);
       // case 'fix_and_merge':
       //   return this.agentService.fixAndMerge(args.prNumber, args.branch);
       default:

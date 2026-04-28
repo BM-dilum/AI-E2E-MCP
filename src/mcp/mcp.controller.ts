@@ -27,7 +27,7 @@ export class McpController {
               repoPath: {
                 type: 'string',
                 description:
-                  ' Absolute path to the local repo e.g. /Users/name/my-project',
+                  'Workspace path where generated target repos are created or reused',
               },
             },
             required: ['spec'],

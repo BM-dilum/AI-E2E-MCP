@@ -17,6 +17,14 @@ export interface Comment {
   user: { login: string };
 }
 
+export interface TargetRepository {
+  owner: string;
+  repo: string;
+  cloneUrl: string;
+  htmlUrl: string;
+  defaultBranch: string;
+}
+
 interface LatestCodeRabbitReview {
   id: number | null;
   submittedAt: string | null;
@@ -24,10 +32,10 @@ interface LatestCodeRabbitReview {
 
 @Injectable()
 export class GithubService {
-  private octokit: Octokit;
-  private owner: string;
-  private repo: string;
-  private baseBranch: string;
+  private readonly octokit: Octokit;
+  private readonly owner: string;
+  private readonly repo: string;
+  private readonly baseBranch: string;
   private readonly logger = new Logger(GithubService.name);
 
   constructor(private configService: ConfigService) {
@@ -37,38 +45,100 @@ export class GithubService {
 
     this.owner = this.configService.getOrThrow('GITHUB_OWNER');
     this.repo = this.configService.getOrThrow('GITHUB_REPO');
+    const configuredBase =
+      this.configService.get<string>('GITHUB_BASE_BRANCH') ||
+      this.configService.get<string>('GITHUB_PR_BASE_BRANCH');
     this.baseBranch =
-      this.configService.get<string>('GITHUB_BASE_BRANCH') || 'dev';
+      configuredBase &&
+      !['repo_branch', 'empty_branch'].includes(configuredBase)
+        ? configuredBase
+        : 'dev';
   }
 
-  //open new PR
+  getOwner(): string {
+    return this.owner;
+  }
+
+  getConfiguredRepo(): string {
+    return this.repo;
+  }
+
+  getBaseBranch(): string {
+    return this.baseBranch;
+  }
+
+  async ensureRepository(repo: string): Promise<TargetRepository> {
+    try {
+      const { data } = await this.octokit.rest.repos.get({
+        owner: this.owner,
+        repo,
+      });
+
+      return {
+        owner: this.owner,
+        repo,
+        cloneUrl: data.clone_url,
+        htmlUrl: data.html_url,
+        defaultBranch: data.default_branch,
+      };
+    } catch (error: any) {
+      if (error?.status !== 404) {
+        throw error;
+      }
+    }
+
+    const { data: user } = await this.octokit.rest.users.getAuthenticated();
+    const { data } =
+      user.login === this.owner
+        ? await this.octokit.rest.repos.createForAuthenticatedUser({
+            name: repo,
+            private: false,
+            auto_init: true,
+          })
+        : await this.octokit.rest.repos.createInOrg({
+            org: this.owner,
+            name: repo,
+            private: false,
+            auto_init: true,
+          });
+
+    this.logger.log(`Created GitHub repository: ${data.full_name}`);
+
+    return {
+      owner: this.owner,
+      repo,
+      cloneUrl: data.clone_url,
+      htmlUrl: data.html_url,
+      defaultBranch: data.default_branch,
+    };
+  }
+
   async openPR(
     branch: string,
     title: string,
     body: string,
+    repo = this.repo,
+    base = this.baseBranch,
   ): Promise<PullRequest> {
-    this.logger.log(`Openning PR: ${title}`);
+    this.logger.log(`Opening PR in ${this.owner}/${repo}: ${title}`);
 
     const { data: pr } = await this.octokit.rest.pulls.create({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       title,
       head: branch,
-      base: this.baseBranch,
+      base,
       body,
     });
 
-    this.logger.log(
-      `✅ PR opened: ${pr.html_url} (${branch} -> ${this.baseBranch})`,
-    );
+    this.logger.log(`PR opened: ${pr.html_url} (${branch} -> ${base})`);
     return pr as PullRequest;
   }
 
-  //get PR details
-  async getPR(prNumber: number): Promise<PullRequest> {
+  async getPR(prNumber: number, repo = this.repo): Promise<PullRequest> {
     const { data } = await this.octokit.rest.pulls.get({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       pull_number: prNumber,
     });
 
@@ -77,10 +147,11 @@ export class GithubService {
 
   private async getLatestCodeRabbitReview(
     prNumber: number,
+    repo = this.repo,
   ): Promise<LatestCodeRabbitReview> {
     const { data: reviews } = await this.octokit.rest.pulls.listReviews({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       pull_number: prNumber,
     });
 
@@ -99,41 +170,41 @@ export class GithubService {
     };
   }
 
-  //get all unresolved coderabbit pr comments
   async getInlineComments(
     prNumber: number,
     reviewId?: number | null,
+    repo = this.repo,
   ): Promise<Comment[]> {
     const { data } = await this.octokit.rest.pulls.listReviewComments({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       pull_number: prNumber,
     });
 
     const comments = data.filter(
-      (c) =>
-        c.user?.login.includes('coderabbit') &&
-        (reviewId == null || c.pull_request_review_id === reviewId),
+      (comment) =>
+        comment.user?.login.includes('coderabbit') &&
+        (reviewId == null || comment.pull_request_review_id === reviewId),
     );
 
     this.logger.log(`Found ${comments.length} inline CodeRabbit comments`);
-    return comments;
+    return comments as Comment[];
   }
 
-  //get all coderabbit comments (nitpicks)
   async getGeneralComments(
     prNumber: number,
     submittedAt?: string | null,
+    repo = this.repo,
   ): Promise<any[]> {
     const { data } = await this.octokit.rest.issues.listComments({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       issue_number: prNumber,
     });
 
     const submittedTime = submittedAt ? new Date(submittedAt).getTime() : null;
-    const comments = data.filter((c) => {
-      if (!c.user?.login.includes('coderabbit')) {
+    const comments = data.filter((comment) => {
+      if (!comment.user?.login.includes('coderabbit')) {
         return false;
       }
 
@@ -141,51 +212,57 @@ export class GithubService {
         return true;
       }
 
-      return new Date(c.created_at).getTime() >= submittedTime;
+      return new Date(comment.created_at).getTime() >= submittedTime;
     });
 
     this.logger.log(`Found ${comments.length} general CodeRabbit comments`);
     return comments;
   }
 
-  //get all Coderabbit comments (inline + general)
-  async getAllComments(prNmber: number) {
-    const latestReview = await this.getLatestCodeRabbitReview(prNmber);
-    const inline = await this.getInlineComments(prNmber, latestReview.id);
+  async getAllComments(prNumber: number, repo = this.repo) {
+    const latestReview = await this.getLatestCodeRabbitReview(prNumber, repo);
+    const inline = await this.getInlineComments(
+      prNumber,
+      latestReview.id,
+      repo,
+    );
     const general = await this.getGeneralComments(
-      prNmber,
+      prNumber,
       latestReview.submittedAt,
+      repo,
     );
     return { inline, general };
   }
 
-  //get thread IDs resolving via GraphQL
-  async getThreadIds(prNumber: number): Promise<Map<number, string>> {
+  async getThreadIds(
+    prNumber: number,
+    repo = this.repo,
+  ): Promise<Map<number, string>> {
     const threadMap = new Map<number, string>();
 
     const query = `
-                query getThreads($owner: String!, $repo: String!, $prNumber: Int!) {
-                    repository(owner: $owner, name: $repo) {
-                        pullRequest(number: $prNumber) {
-                            reviewThreads(first: 100) {
-                                nodes {
-                                    id
-                                    isResolved
-                                    comments(first: 50) {
-                                        nodes {
-                                            databaseId
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+      query getThreads($owner: String!, $repo: String!, $prNumber: Int!) {
+        repository(owner: $owner, name: $repo) {
+          pullRequest(number: $prNumber) {
+            reviewThreads(first: 100) {
+              nodes {
+                id
+                isResolved
+                comments(first: 50) {
+                  nodes {
+                    databaseId
+                  }
                 }
+              }
+            }
+          }
+        }
+      }
     `;
 
     const result: any = await this.octokit.graphql(query, {
       owner: this.owner,
-      repo: this.repo,
+      repo,
       prNumber,
     });
 
@@ -201,11 +278,15 @@ export class GithubService {
     return threadMap;
   }
 
-  //reply to inline comments
-  async replyToComment(prNumber: number, commentId: number, body: string) {
+  async replyToComment(
+    prNumber: number,
+    commentId: number,
+    body: string,
+    repo = this.repo,
+  ) {
     await this.octokit.rest.pulls.createReplyForReviewComment({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       pull_number: prNumber,
       comment_id: commentId,
       body,
@@ -214,35 +295,35 @@ export class GithubService {
     this.logger.log(`Replied to comment ${commentId}`);
   }
 
-  //resolve a thread via GraphQL
   async resolveThread(threadId: string) {
     await this.octokit.graphql(
       `
         mutation resolveThread($threadId: ID!) {
-            resolveReviewThread(input : { threadId : $threadId}) {
-                thread {
-                    id
-                    isResolved 
-                }
+          resolveReviewThread(input : { threadId : $threadId}) {
+            thread {
+              id
+              isResolved
             }
+          }
         }
-        `,
+      `,
       { threadId },
     );
-    this.logger.log(`✅ Resolved thread ${threadId}`);
+    this.logger.log(`Resolved thread ${threadId}`);
   }
 
-  //resolve all comments for fixed files
   async resolveComments(
     prNumber: number,
     comments: Comment[],
     fixedFiles: string[],
+    repo = this.repo,
   ) {
-    const threadMap = await this.getThreadIds(prNumber);
-    const latestReview = await this.getLatestCodeRabbitReview(prNumber);
+    const threadMap = await this.getThreadIds(prNumber, repo);
+    const latestReview = await this.getLatestCodeRabbitReview(prNumber, repo);
     const latestInlineComments = await this.getInlineComments(
       prNumber,
       latestReview.id,
+      repo,
     );
     const commentsToResolve = comments.filter(
       (comment) => typeof comment?.id === 'number' && comment.path,
@@ -262,14 +343,15 @@ export class GithubService {
           await this.replyToComment(
             prNumber,
             comment.id,
-            '✅ Fixed in latest commit',
+            'Fixed in latest commit',
+            repo,
           );
 
           const threadId = threadMap.get(comment.id);
           if (threadId) {
             await this.resolveThread(threadId);
           }
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(
             `Failed to resolve comment ${comment.id}: ${error.message}`,
           );
@@ -278,11 +360,10 @@ export class GithubService {
     }
   }
 
-  //trigger coderabbit review
-  async triggerReview(prNumber: number) {
+  async triggerReview(prNumber: number, repo = this.repo) {
     await this.octokit.rest.issues.createComment({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       issue_number: prNumber,
       body: '@coderabbitai review',
     });
@@ -290,62 +371,64 @@ export class GithubService {
     this.logger.log(`Triggered CodeRabbit review for PR #${prNumber}`);
   }
 
-  //wait for CodeRabbit to submit a review
-  async waitForReview(prNumber: number, timeoutMs = 600000): Promise<string> {
-    this.logger.log('⏳ Waiting for CodeRabbit review...');
+  async waitForReview(
+    prNumber: number,
+    repo = this.repo,
+    timeoutMs = 600000,
+  ): Promise<string> {
+    this.logger.log('Waiting for CodeRabbit review...');
 
     const interval = 30000;
     const maxAttempts = timeoutMs / interval;
     let attempts = 0;
     let lastReviewId = 0;
 
-    // get current latest review ID to detect NEW reviews
     const { data: existing } = await this.octokit.rest.pulls.listReviews({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       pull_number: prNumber,
     });
 
-    const existingCoderabbit = existing.filter((r) =>
-      r.user?.login.includes('coderabbit'),
+    const existingCoderabbit = existing.filter((review) =>
+      review.user?.login.includes('coderabbit'),
     );
 
     if (existingCoderabbit.length > 0) {
       lastReviewId = existingCoderabbit[existingCoderabbit.length - 1].id;
     }
 
-    //poll for new review
     while (attempts < maxAttempts) {
-      await new Promise((r) => setTimeout(r, interval));
+      await new Promise((resolve) => setTimeout(resolve, interval));
       attempts++;
 
       const { data: reviews } = await this.octokit.rest.pulls.listReviews({
         owner: this.owner,
-        repo: this.repo,
+        repo,
         pull_number: prNumber,
       });
 
       const coderabbitReviews = reviews.filter(
-        (r) => r.user?.login.includes('coderabbit') && r.id > lastReviewId,
+        (review) =>
+          review.user?.login.includes('coderabbit') && review.id > lastReviewId,
       );
 
       if (coderabbitReviews.length > 0) {
         const latest = coderabbitReviews[coderabbitReviews.length - 1];
-        this.logger.log(`📋 CodeRabbit state: ${latest.state}`);
+        this.logger.log(`CodeRabbit state: ${latest.state}`);
         return latest.state;
       }
 
-      this.logger.log(`⏳ Still waiting... attempt ${attempts}/${maxAttempts}`);
+      this.logger.log(`Still waiting... attempt ${attempts}/${maxAttempts}`);
     }
-    this.logger.warn('⏰ Timed out waiting for review');
+
+    this.logger.warn('Timed out waiting for review');
     return 'timed_out';
   }
 
-  // merge the PR
-  async mergePR(prNumber: number) {
+  async mergePR(prNumber: number, repo = this.repo) {
     const { data } = await this.octokit.rest.pulls.merge({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       pull_number: prNumber,
       merge_method: 'squash',
     });
@@ -356,22 +439,22 @@ export class GithubService {
       );
     }
 
-    this.logger.log(`✅ Merged PR #${prNumber}: ${data.sha}`);
+    this.logger.log(`Merged PR #${prNumber}: ${data.sha}`);
   }
 
-  async postComment(prNumber: number, body: string) {
+  async postComment(prNumber: number, body: string, repo = this.repo) {
     await this.octokit.rest.issues.createComment({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       issue_number: prNumber,
       body,
     });
   }
 
-  async getBranch(branch: string) {
+  async getBranch(branch: string, repo = this.repo) {
     return this.octokit.rest.repos.getBranch({
       owner: this.owner,
-      repo: this.repo,
+      repo,
       branch,
     });
   }

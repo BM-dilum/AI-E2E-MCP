@@ -27,7 +27,7 @@ export class GitFixAgent {
     filePaths: string[],
     repoPath?: string,
   ) {
-    this.logger.log(`🧪 GitFixAgent: branch=${branch}`);
+    this.logger.log(`GitFixAgent: branch=${branch}`);
 
     const agent = createAgent({
       model: this.getModel(),
@@ -35,27 +35,24 @@ export class GitFixAgent {
         this.gitTools.installDeps(repoPath),
         this.gitTools.runTests(repoPath),
         this.gitTools.fixFile(repoPath),
-        this.gitTools.commitAndPush(repoPath),
       ],
       systemPrompt: `
-        You are a git fix agent. Your job is to validate generated files by running tests,
-        fixing any failures, and committing the result.
+        You are a git fix agent. Your job is to validate generated files by running tests
+        and fixing failures.
 
         Steps:
-        1. Installs Dependencies
+        1. install_dependencies
         2. run_tests
-        3. If TESTS_PASSED → commit_and_push, then stop
-        4. If TESTS_FAILED → fix_file for each of these files: ${filePaths.join(', ')}
-        5. run_tests again
-        6. If TESTS_PASSED → commit_and_push, then stop
-        7. Repeat fix → test loop max 3 times
-        8. If still failing after 3 attempts → stop, do NOT commit or push
+        3. If TESTS_PASSED, stop.
+        4. If TESTS_FAILED, call fix_file for the relevant files from this list: ${filePaths.join(', ')}
+        5. run_tests again.
+        6. Keep fixing and testing until TESTS_PASSED.
 
         RULES:
-        - Never commit or push if tests are failing
-        - Only fix the files listed above — do not touch other files
+        - Do not commit or push. Another service will do that only after tests pass.
+        - Only fix the files listed above. Do not touch other files.
         - Use branch: ${branch}
-        - Use commit message: ${commitMessage}
+        - Commit message for later: ${commitMessage}
       `,
       middleware: [],
     });
@@ -75,7 +72,7 @@ export class GitFixAgent {
     });
 
     const output = result.messages[result.messages.length - 1].content;
-    this.logger.log(`✅ GitFixAgent done: ${output}`);
+    this.logger.log(`GitFixAgent done: ${output}`);
     return typeof output === 'string' ? output : JSON.stringify(output);
   }
 }

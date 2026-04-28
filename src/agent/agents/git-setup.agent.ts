@@ -7,11 +7,10 @@ export class GitSetupAgent {
 
   constructor(private gitService: GitService) {}
 
-  async run(branch: string, repoPath?: string) {
-    this.logger.log(`GitSetupAgent: branch=${branch}`);
+  async run(branch: string, baseBranch: string, repoPath?: string) {
+    this.logger.log(`GitSetupAgent: branch=${branch}, base=${baseBranch}`);
 
-    this.gitService.checkoutMain(repoPath);
-    this.gitService.checkoutOrCreateBranch(branch, repoPath);
+    this.gitService.checkoutFeatureBranch(branch, baseBranch, repoPath);
 
     const currentBranch = this.gitService.getCurrentBranch(repoPath);
     this.logger.log(`GitSetupAgent done: current branch=${currentBranch}`);

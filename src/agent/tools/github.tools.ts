@@ -110,13 +110,14 @@ export class GithubTools {
     );
   }
 
-  resolveComments() {
+  resolveComments(repo?: string) {
     return tool(
       async ({ prNumber, comments, fixedFiles }) => {
         await this.githubService.resolveComments(
           prNumber,
           JSON.parse(comments),
           JSON.parse(fixedFiles),
+          repo,
         );
         return 'Comments resolved';
       },
@@ -132,10 +133,10 @@ export class GithubTools {
     );
   }
 
-  triggerReview() {
+  triggerReview(repo?: string) {
     return tool(
       async ({ prNumber }) => {
-        await this.githubService.triggerReview(prNumber);
+        await this.githubService.triggerReview(prNumber, repo);
         return 'Review triggered';
       },
       {
@@ -146,10 +147,10 @@ export class GithubTools {
     );
   }
 
-  waitForReview() {
+  waitForReview(repo?: string) {
     return tool(
       async ({ prNumber }) => {
-        return await this.githubService.waitForReview(prNumber);
+        return await this.githubService.waitForReview(prNumber, repo);
       },
       {
         name: 'wait_for_review',
@@ -160,11 +161,11 @@ export class GithubTools {
     );
   }
 
-  triggerAndWaitForReview() {
+  triggerAndWaitForReview(repo?: string) {
     return tool(
       async ({ prNumber }) => {
-        await this.githubService.triggerReview(prNumber);
-        const result = await this.githubService.waitForReview(prNumber);
+        await this.githubService.triggerReview(prNumber, repo);
+        const result = await this.githubService.waitForReview(prNumber, repo);
         return result;
       },
       {
@@ -176,10 +177,10 @@ export class GithubTools {
     );
   }
 
-  mergePR() {
+  mergePR(repo?: string) {
     return tool(
       async ({ prNumber }) => {
-        await this.githubService.mergePR(prNumber);
+        await this.githubService.mergePR(prNumber, repo);
         return `PR #${prNumber} merged`;
       },
       {

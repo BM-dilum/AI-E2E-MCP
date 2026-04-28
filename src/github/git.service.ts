@@ -11,11 +11,15 @@ export class GitService {
   constructor(private configService: ConfigService) {}
 
   private getBaseBranch(): string {
-    return (
+    const configured =
       this.configService.get<string>('GITHUB_BASE_BRANCH') ||
-      this.configService.get<string>('GITHUB_PR_BASE_BRANCH') ||
-      'dev'
-    );
+      this.configService.get<string>('GITHUB_PR_BASE_BRANCH');
+
+    if (configured && !['repo_branch', 'empty_branch'].includes(configured)) {
+      return configured;
+    }
+
+    return 'dev';
   }
 
   private getRepoPath(repoPath?: string): string {
@@ -41,6 +45,12 @@ export class GitService {
     execSync(`git pull origin ${baseBranch}`, { cwd: root });
   }
 
+  checkoutBaseBranch(baseBranch: string, repoPath?: string) {
+    const root = this.getRepoPath(repoPath);
+    execSync(`git checkout ${baseBranch}`, { cwd: root });
+    execSync(`git pull origin ${baseBranch}`, { cwd: root });
+  }
+
   //create a branch
   createBranch(branch: string, repoPath?: string) {
     const root = this.getRepoPath(repoPath);
@@ -57,6 +67,44 @@ export class GitService {
       );
     }
     this.logger.log(`Checked out feature branch: ${currentBranch}`);
+  }
+
+  checkoutFeatureBranch(branch: string, baseBranch: string, repoPath?: string) {
+    this.checkoutBaseBranch(baseBranch, repoPath);
+    this.checkoutOrCreateBranch(branch, repoPath);
+  }
+
+  isGitRepo(repoPath: string): boolean {
+    try {
+      execSync('git rev-parse --show-toplevel', {
+        cwd: repoPath,
+        stdio: 'ignore',
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  cloneRepository(cloneUrl: string, destinationPath: string) {
+    const parent = path.dirname(destinationPath);
+    fs.mkdirSync(parent, { recursive: true });
+
+    if (fs.existsSync(destinationPath) && this.isGitRepo(destinationPath)) {
+      this.logger.log(`Repository already cloned: ${destinationPath}`);
+      return;
+    }
+
+    if (fs.existsSync(destinationPath)) {
+      throw new Error(
+        `Cannot clone into ${destinationPath}: path exists but is not a git repository`,
+      );
+    }
+
+    execSync(`git clone ${cloneUrl} "${destinationPath}"`, {
+      cwd: parent,
+      stdio: 'inherit',
+    });
   }
 
   // checkout existing branch

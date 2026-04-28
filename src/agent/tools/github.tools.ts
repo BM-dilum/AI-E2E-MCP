@@ -13,11 +13,11 @@ export class GithubTools {
     private aiService: AIService,
   ) {}
 
-  openPR() {
+  openPR(repoPath?: string) {
     return tool(
       async ({ branch, title, body }) => {
         try {
-          this.gitService.getCurrentBranch();
+          this.gitService.getCurrentBranch(repoPath);
         } catch (error) {
           return `PR_BLOCKED: branch ${branch} does not exist on GitHub — push it first`;
         }
@@ -93,7 +93,7 @@ export class GithubTools {
   commitAndPush(repoPath?: string) {
     return tool(
       async ({ branch, message }) => {
-        const passed = this.gitService.runTests();
+        const passed = this.gitService.runTests(repoPath);
         if (!passed) return 'PUSH_BLOCKED: tests are still failing';
 
         const pushed = this.gitService.commitAndPush(branch, message, repoPath);

@@ -39,10 +39,10 @@ export class GitTools {
     );
   }
 
-  installDeps() {
+  installDeps(repoPath?: string) {
     return tool(
       async () => {
-        this.gitService.installDependencies();
+        this.gitService.installDependencies(repoPath);
         return 'Dependencies installed';
       },
       {
@@ -90,7 +90,7 @@ export class GitTools {
   commitAndPush(repoPath?: string) {
     return tool(
       async ({ branch, message }) => {
-        const passed = this.gitService.runTests();
+        const passed = this.gitService.runTests(repoPath);
         if (!passed) return 'PUSH_BLOCKED: tests are still failing';
 
         const pushed = this.gitService.commitAndPush(branch, message, repoPath);

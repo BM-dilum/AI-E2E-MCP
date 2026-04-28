@@ -81,10 +81,11 @@ export class GitService {
   }
 
   // install dependencies
-  installDependencies() {
+  installDependencies(repoPath?: string) {
+    const root = this.getRepoPath(repoPath);
     this.logger.log('Installing dependencies...');
     try {
-      this.exec('npm install');
+      this.exec('npm install', root);
       this.logger.log('✅ Dependencies installed');
     } catch {
       this.logger.warn('⚠️ npm install failed — continuing');
@@ -152,12 +153,20 @@ export class GitService {
 
       const diff = execSync(`git diff --staged`, { cwd: root }).toString();
       if (diff.length === 0) {
-        this.logger.log('⚠️ No changes to commit');
+        this.logger.log('⚠️ No staged changes to commit; pushing branch');
+        return this.exec(`git push origin ${branch}`, root);
+      }
+
+      const committed = this.exec(`git commit -m "${message}"`, root);
+      if (!committed) {
         return false;
       }
 
-      this.exec(`git commit -m "${message}"`);
-      this.exec(`git push origin ${branch}`);
+      const pushed = this.exec(`git push origin ${branch}`, root);
+      if (!pushed) {
+        return false;
+      }
+
       this.logger.log(`✅ Pushed to ${branch}`);
       return true;
     } catch (error) {

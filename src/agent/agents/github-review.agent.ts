@@ -1,87 +1,38 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createAgent } from 'langchain';
-import { ChatGroq } from '@langchain/groq';
-import { ConfigService } from '@nestjs/config';
-import { GithubTools } from '../tools/github.tools';
 import { GithubService } from 'src/github/github.service';
-import { ChatOpenAI } from '@langchain/openai';
 
 @Injectable()
 export class GithubReviewAgent {
   private readonly logger = new Logger(GithubReviewAgent.name);
 
-  constructor(
-    private githubTools: GithubTools,
-    private githubService: GithubService,
-    private configService: ConfigService,
-  ) {}
+  constructor(private githubService: GithubService) {}
 
-  private getModal() {
-    return new ChatOpenAI({
-      apiKey: this.configService.getOrThrow('OPENAI_API_KEY'),
-      model: 'gpt-5.4-mini',
-      temperature: 0.1,
-    });
-  }
   async run(branch: string, prTitle: string) {
-    this.logger.log(`🐙 GithubReviewAgent: branch=${branch}`);
+    this.logger.log(`GithubReviewAgent: branch=${branch}`);
 
-    // Step 1: Agent opens PR only
-    const openPRAgent = createAgent({
-      model: this.getModal(),
-      tools: [this.githubTools.openPR()],
-      systemPrompt: `
-      You have exactly 1 tool: open_pr.
-      Call open_pr ONCE with the branch and title provided.
-      Return the exact response including PR number.
-      Do not call any other tools.
-    `,
-      middleware: [],
-    });
-
-    const openResult = await openPRAgent.invoke(
-      {
-        messages: [
-          {
-            role: 'user',
-            content: `Open PR. Branch: ${branch}. Title: ${prTitle}`,
-          },
-        ],
-      },
-      { recursionLimit: 10 },
+    const pr = await this.githubService.openPR(
+      branch,
+      prTitle,
+      `Automated feature branch: ${branch}`,
     );
+    const prNumber = pr.number;
 
-    const openOutput =
-      openResult.messages[openResult.messages.length - 1].content;
-    const openText =
-      typeof openOutput === 'string' ? openOutput : JSON.stringify(openOutput);
+    this.logger.log(`PR opened: #${prNumber}`);
 
-    const match = openText.match(/(\d+)/);
-    const prNumber = match ? parseInt(match[1]) : null;
-
-    if (!prNumber) {
-      this.logger.error('❌ Could not extract PR number');
-      return 'NOT_APPROVED prNumber=null';
-    }
-
-    this.logger.log(`✅ PR opened: #${prNumber}`);
-
-    // Step 2: Trigger + wait directly — deterministic, no agent loop
     await this.githubService.triggerReview(prNumber);
     const reviewResult = await this.githubService.waitForReview(prNumber);
 
-    this.logger.log(`📋 Review result: ${reviewResult} for PR #${prNumber}`);
+    this.logger.log(`Review result: ${reviewResult} for PR #${prNumber}`);
 
-    // Step 3:  decides what to do based on review result
     const shouldMerge =
       reviewResult === 'APPROVED' || reviewResult === 'timed_out';
 
     if (shouldMerge) {
       await this.githubService.mergePR(prNumber);
-      this.logger.log(`✅ PR #${prNumber} merged`);
+      this.logger.log(`PR #${prNumber} merged`);
       return `APPROVED prNumber=${prNumber}`;
-    } else {
-      return `NOT_APPROVED prNumber=${prNumber} result=${reviewResult}`;
     }
+
+    return `NOT_APPROVED prNumber=${prNumber} result=${reviewResult}`;
   }
 }

@@ -73,12 +73,39 @@ export class AgentService {
     }
 
     // Stage 3b: Test + fix
-    await this.gitFixAgent.run(
+    const gitFixResult = await this.gitFixAgent.run(
       plan.branch,
       plan.commitMessage,
       plan.filePaths,
       repoPath,
     );
+
+    const testsPassed = this.gitService.runTests(repoPath);
+    if (!testsPassed) {
+      this.logger.error(
+        'Tests are still failing after GitFixAgent; blocking push and PR creation',
+      );
+      return {
+        success: false,
+        message:
+          'Tests are still failing after GitFixAgent; blocked push and PR creation',
+        gitFixResult,
+      };
+    }
+
+    const pushed = this.gitService.commitAndPush(
+      plan.branch,
+      plan.commitMessage,
+      repoPath,
+    );
+    if (!pushed) {
+      this.logger.error('Could not push tested changes; blocking PR creation');
+      return {
+        success: false,
+        message: 'Could not push tested changes; blocked PR creation',
+        gitFixResult,
+      };
+    }
 
     // Stage 4a: Open PR + review (happy path)
     const reviewResult = await this.githubReviewAgent.run(

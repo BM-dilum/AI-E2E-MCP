@@ -32,7 +32,7 @@ export class GitFixAgent {
     const agent = createAgent({
       model: this.getModel(),
       tools: [
-        this.gitTools.installDeps(),
+        this.gitTools.installDeps(repoPath),
         this.gitTools.runTests(repoPath),
         this.gitTools.fixFile(repoPath),
         this.gitTools.commitAndPush(repoPath),

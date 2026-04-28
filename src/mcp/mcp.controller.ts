@@ -1,4 +1,11 @@
-import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Logger,
+  Post,
+} from '@nestjs/common';
 import { McpService } from './mcp.service';
 
 @Controller('mcp')
@@ -63,6 +70,10 @@ export class McpController {
   //vs code calls this when user invlokes a tool
   @Post('call')
   async callToo(@Body() body: { name: string; arguments: any }) {
+    if (!body?.name) {
+      throw new BadRequestException('Request body must include a tool name');
+    }
+
     this.logger.log(`Tool called: ${body.name}`);
     this.logger.log(`Arguments: ${JSON.stringify(body.arguments)}`);
 

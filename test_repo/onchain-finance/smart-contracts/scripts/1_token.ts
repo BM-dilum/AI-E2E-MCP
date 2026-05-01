@@ -6,6 +6,8 @@ async function main() {
   const mintAmount = process.env.MINT_AMOUNT;
   const mintToAddress = process.env.MINT_TO_ADDRESS;
 
+  const [deployer] = await ethers.getSigners();
+
   const Token = await ethers.getContractFactory("Token");
   const token = await Token.deploy(tokenName, tokenSymbol);
 
@@ -14,11 +16,12 @@ async function main() {
   const tokenAddress = await token.getAddress();
   console.log(`Token deployed to: ${tokenAddress}`);
 
-  if (mintAmount && mintToAddress) {
+  if (mintAmount) {
+    const recipient = mintToAddress ?? deployer.address;
     const amount = ethers.parseUnits(mintAmount, 18);
-    const mintTx = await token.mint(mintToAddress, amount);
+    const mintTx = await token.mint(recipient, amount);
     await mintTx.wait();
-    console.log(`Minted ${mintAmount} tokens to ${mintToAddress}`);
+    console.log(`Minted ${mintAmount} tokens to ${recipient}`);
   }
 }
 

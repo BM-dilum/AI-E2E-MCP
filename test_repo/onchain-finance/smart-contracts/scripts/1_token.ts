@@ -23,6 +23,7 @@ function parseMintAmount(value: string | undefined): bigint | null {
 async function main(): Promise<void> {
   const tokenName = process.env.TOKEN_NAME?.trim() || "XAU Dollar";
   const tokenSymbol = process.env.TOKEN_SYMBOL?.trim() || "XAU$";
+  const mintAmount = parseMintAmount(process.env.MINT_AMOUNT);
 
   const Token = await ethers.getContractFactory("Token");
   const token = await Token.deploy(tokenName, tokenSymbol);
@@ -31,12 +32,13 @@ async function main(): Promise<void> {
   const tokenAddress = await token.getAddress();
   console.log(`Token deployed to: ${tokenAddress}`);
 
-  const mintAmount = parseMintAmount(process.env.MINT_AMOUNT);
   if (mintAmount !== null && mintAmount > 0n) {
     const [deployer] = await ethers.getSigners();
     const mintTx = await token.mint(deployer.address, mintAmount);
     await mintTx.wait();
-    console.log(`Minted ${mintAmount.toString()} tokens to deployer: ${deployer.address}`);
+    console.log(
+      `Minted ${mintAmount.toString()} tokens to deployer: ${deployer.address}`,
+    );
   }
 }
 

@@ -4,37 +4,53 @@ pragma solidity 0.8.28;
 contract LoggingContract {
     struct ToolCall {
         string name;
-        string args;
-        string result;
+        string argsHash;
+        string resultHash;
     }
 
     struct LogEntry {
-        string userRequest;
-        string response;
+        string userRequestHash;
+        string responseHash;
         ToolCall[] toolCalls;
     }
 
     struct SessionDataEntry {
         LogEntry[] logs;
-        string txHash;
+        string cid;
+        address uploader;
+        bool exists;
     }
 
     mapping(string => SessionDataEntry) private sessionData;
     string[] private sessionIDs;
 
     uint256 public constant DEFAULT_PAGE_SIZE = 10;
+    address public immutable admin;
 
-    event LogsUploaded(string indexed sessionID, LogEntry[] logEntries, string txHash);
+    event LogsUploaded(string indexed sessionID, string cid);
+
+    modifier onlyAdmin() {
+        require(msg.sender == admin, "Not admin");
+        _;
+    }
+
+    constructor() {
+        admin = msg.sender;
+    }
 
     function uploadLogs(
         string memory sessionID,
         LogEntry[] memory logEntries,
-        string memory txHash
+        string memory cid
     ) external {
         SessionDataEntry storage entry = sessionData[sessionID];
 
-        if (bytes(entry.txHash).length == 0) {
+        if (!entry.exists) {
+            entry.exists = true;
+            entry.uploader = msg.sender;
             sessionIDs.push(sessionID);
+        } else {
+            require(msg.sender == entry.uploader || msg.sender == admin, "Not authorized");
         }
 
         delete entry.logs;
@@ -44,22 +60,22 @@ contract LoggingContract {
             entry.logs.push();
 
             LogEntry storage storedLog = entry.logs[entry.logs.length - 1];
-            storedLog.userRequest = logEntry.userRequest;
-            storedLog.response = logEntry.response;
+            storedLog.userRequestHash = logEntry.userRequestHash;
+            storedLog.responseHash = logEntry.responseHash;
 
             for (uint256 j = 0; j < logEntry.toolCalls.length; j++) {
                 ToolCall memory toolCall = logEntry.toolCalls[j];
                 storedLog.toolCalls.push(ToolCall({
                     name: toolCall.name,
-                    args: toolCall.args,
-                    result: toolCall.result
+                    argsHash: toolCall.argsHash,
+                    resultHash: toolCall.resultHash
                 }));
             }
         }
 
-        entry.txHash = txHash;
+        entry.cid = cid;
 
-        emit LogsUploaded(sessionID, logEntries, txHash);
+        emit LogsUploaded(sessionID, cid);
     }
 
     function getLogs(
@@ -91,25 +107,28 @@ contract LoggingContract {
             SessionDataEntry storage storedEntry = sessionData[sessionIDs[i]];
             uint256 resultIndex = i - start;
 
-            results[resultIndex].txHash = storedEntry.txHash;
+            results[resultIndex].cid = storedEntry.cid;
+            results[resultIndex].uploader = storedEntry.uploader;
+            results[resultIndex].exists = storedEntry.exists;
 
+            LogEntry[] memory logCopies = new LogEntry[](storedEntry.logs.length);
             for (uint256 j = 0; j < storedEntry.logs.length; j++) {
                 LogEntry storage storedLog = storedEntry.logs[j];
-                results[resultIndex].logs.push();
+                logCopies[j].userRequestHash = storedLog.userRequestHash;
+                logCopies[j].responseHash = storedLog.responseHash;
 
-                LogEntry storage resultLog = results[resultIndex].logs[results[resultIndex].logs.length - 1];
-                resultLog.userRequest = storedLog.userRequest;
-                resultLog.response = storedLog.response;
-
+                ToolCall[] memory toolCallCopies = new ToolCall[](storedLog.toolCalls.length);
                 for (uint256 k = 0; k < storedLog.toolCalls.length; k++) {
                     ToolCall storage storedToolCall = storedLog.toolCalls[k];
-                    resultLog.toolCalls.push(ToolCall({
+                    toolCallCopies[k] = ToolCall({
                         name: storedToolCall.name,
-                        args: storedToolCall.args,
-                        result: storedToolCall.result
-                    }));
+                        argsHash: storedToolCall.argsHash,
+                        resultHash: storedToolCall.resultHash
+                    });
                 }
+                logCopies[j].toolCalls = toolCallCopies;
             }
+            results[resultIndex].logs = logCopies;
         }
 
         return (results, totalPages);

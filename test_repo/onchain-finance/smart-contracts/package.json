@@ -6,6 +6,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "hardhat test",
+    "mint": "hardhat run scripts/mint.ts",
+    "mint:polygon": "hardhat run scripts/mint.ts --network polygonAmoy",
     "deploy:sepolia": "hardhat run scripts/1_token.ts --network sepolia",
     "deploy:polygon": "hardhat run scripts/1_token.ts --network polygonAmoy",
     "deploy:logging:sepolia": "hardhat run scripts/2_loggingContract.ts --network sepolia",

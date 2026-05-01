@@ -40,7 +40,10 @@ export class GitService {
   //create a branch
   createBranch(branch: string, repoPath?: string) {
     const root = this.getRepoPath(repoPath);
-    execSync(`git checkout -b ${branch}`, { cwd: root });
+    // -B resets the branch to current HEAD even if it already exists locally,
+    // ensuring a fresh start from the latest base branch instead of reusing
+    // an old feature branch with stale commits.
+    execSync(`git checkout -B ${branch}`, { cwd: root });
   }
 
   // checkout existing branch
@@ -211,6 +214,6 @@ export class GitService {
 
   pushBranch(branch: string, repoPath?: string) {
     const root = this.getRepoPath(repoPath);
-    execSync(`git push -u origin ${branch}`, { cwd: root });
+    execSync(`git push -u --force-with-lease origin ${branch}`, { cwd: root });
   }
 }

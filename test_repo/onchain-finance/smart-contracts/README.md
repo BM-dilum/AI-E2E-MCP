@@ -30,15 +30,16 @@ Planned deployments:
 A session-based logging contract for storing minimal AI interaction metadata on-chain.
 
 Features:
-- Stores lightweight session metadata and references to off-chain records
+- Stores only minimal session metadata on-chain
+- Records session IDs, timestamps, and content hashes or off-chain references
 - Supports paginated retrieval
 - Returns session IDs
 - Emits upload events for indexing and monitoring
 
 Notes:
-- Do not store raw prompts, tool outputs, or full AI interaction payloads on-chain.
-- Persist detailed conversation data, tool call payloads, and large artifacts off-chain.
-- Use the contract to record only minimal metadata such as session identifiers, timestamps, hashes, and content references.
+- Keep full log bodies, raw prompts, tool outputs, and detailed AI interaction payloads off-chain.
+- Store detailed conversation data, tool call payloads, and large artifacts in off-chain storage behind appropriate access control.
+- Use the contract only to record minimal metadata such as session identifiers, timestamps, hashes, and content references.
 
 ## Prerequisites
 

@@ -3,7 +3,6 @@ pragma solidity 0.8.28;
 
 contract LoggingContract {
     struct ToolCall {
-        string name;
         string argsHash;
         string resultHash;
     }
@@ -66,7 +65,6 @@ contract LoggingContract {
             for (uint256 j = 0; j < logEntry.toolCalls.length; j++) {
                 ToolCall memory toolCall = logEntry.toolCalls[j];
                 storedLog.toolCalls.push(ToolCall({
-                    name: toolCall.name,
                     argsHash: toolCall.argsHash,
                     resultHash: toolCall.resultHash
                 }));
@@ -121,7 +119,6 @@ contract LoggingContract {
                 for (uint256 k = 0; k < storedLog.toolCalls.length; k++) {
                     ToolCall storage storedToolCall = storedLog.toolCalls[k];
                     toolCallCopies[k] = ToolCall({
-                        name: storedToolCall.name,
                         argsHash: storedToolCall.argsHash,
                         resultHash: storedToolCall.resultHash
                     });

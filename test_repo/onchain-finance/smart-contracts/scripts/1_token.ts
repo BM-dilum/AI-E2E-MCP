@@ -1,5 +1,5 @@
-import { ethers } from "hardhat";
-import * as dotenv from "dotenv";
+import { ethers } from 'hardhat';
+import * as dotenv from 'dotenv';
 
 dotenv.config();
 
@@ -13,8 +13,8 @@ function parseMintAmount(value: string | undefined): bigint | null {
     return null;
   }
 
-  if (trimmed.startsWith("-")) {
-    throw new Error("Negative MINT_AMOUNT not allowed");
+  if (trimmed.startsWith('-')) {
+    throw new Error('Negative MINT_AMOUNT not allowed');
   }
 
   try {
@@ -25,11 +25,11 @@ function parseMintAmount(value: string | undefined): bigint | null {
 }
 
 async function main(): Promise<void> {
-  const tokenName = process.env.TOKEN_NAME?.trim() || "XAU Dollar";
-  const tokenSymbol = process.env.TOKEN_SYMBOL?.trim() || "XAU$";
+  const tokenName = process.env.TOKEN_NAME?.trim() || 'XAU Dollar';
+  const tokenSymbol = process.env.TOKEN_SYMBOL?.trim() || 'XAU$';
   const mintAmount = parseMintAmount(process.env.MINT_AMOUNT);
 
-  const Token = await ethers.getContractFactory("Token");
+  const Token = await ethers.getContractFactory('Token');
   const token = await Token.deploy(tokenName, tokenSymbol);
   await token.waitForDeployment();
 

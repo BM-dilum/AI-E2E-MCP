@@ -27,13 +27,18 @@ Planned deployments:
 ### LoggingContract
 `contracts/LoggingContract.sol`
 
-A session-based logging contract for storing AI interaction logs on-chain.
+A session-based logging contract for storing minimal AI interaction metadata on-chain.
 
 Features:
-- Stores session logs with tool call details
+- Stores lightweight session metadata and references to off-chain records
 - Supports paginated retrieval
 - Returns session IDs
 - Emits upload events for indexing and monitoring
+
+Notes:
+- Do not store raw prompts, tool outputs, or full AI interaction payloads on-chain.
+- Persist detailed conversation data, tool call payloads, and large artifacts off-chain.
+- Use the contract to record only minimal metadata such as session identifiers, timestamps, hashes, and content references.
 
 ## Prerequisites
 
@@ -70,6 +75,7 @@ This uses:
 
 Optional:
 - `MINT_AMOUNT` to mint tokens to the deployer after deployment
+- `MINT_TO_ADDRESS` to override the recipient of the initial mint; defaults to the deployer address when omitted
 
 ### Deploy to Polygon Amoy
 
@@ -81,6 +87,7 @@ This uses:
 
 Optional:
 - `MINT_AMOUNT` to mint tokens to the deployer after deployment
+- `MINT_TO_ADDRESS` to override the recipient of the initial mint; defaults to the deployer address when omitted
 
 ## Deploy LoggingContract
 
@@ -101,7 +108,9 @@ npm run mint
 Required environment variables:
 - `TOKEN_CONTRACT_ADDRESS`
 - `MINT_AMOUNT`
-- `MINT_TO_ADDRESS`
+
+Optional environment variables:
+- `MINT_TO_ADDRESS` to specify the recipient; defaults to the deployer address when omitted
 
 ## Environment Variables
 
@@ -113,13 +122,13 @@ Required environment variables:
 | `TOKEN_NAME` | Token name used by deployment scripts | `XAU Dollar` |
 | `TOKEN_SYMBOL` | Token symbol used by deployment scripts | `XAU$` |
 | `MINT_AMOUNT` | Amount to mint in deployment/mint scripts | `1000000` |
-| `MINT_TO_ADDRESS` | Recipient address for minting | `0x...` |
+| `MINT_TO_ADDRESS` | Recipient address for minting; optional for deployment and mint scripts | `0x...` |
 | `TOKEN_CONTRACT_ADDRESS` | Deployed Token contract address | `0x...` |
 
 ## Project Structure
 
 - `contracts/Token.sol` - ERC20 token contract
-- `contracts/LoggingContract.sol` - on-chain logging contract
+- `contracts/LoggingContract.sol` - minimal on-chain metadata logging contract
 - `scripts/1_token.ts` - deploy Token contract
 - `scripts/2_loggingContract.ts` - deploy LoggingContract
 - `scripts/mint.ts` - mint tokens to a recipient
@@ -132,3 +141,4 @@ Required environment variables:
 - The deployment scripts use `ethers` from `hardhat`.
 - Ensure the deployer wallet has enough native token balance for gas on the selected network.
 - The Token contract owner is the deployer account used during deployment.
+- The mint script now supports an optional recipient override via `MINT_TO_ADDRESS`; if omitted, it mints to the deployer address.

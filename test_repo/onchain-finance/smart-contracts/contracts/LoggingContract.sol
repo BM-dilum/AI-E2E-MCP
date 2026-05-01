@@ -1,4 +1,5 @@
-pragma solidity 0.8.0;
+// SPDX-License-Identifier: MIT
+pragma solidity 0.8.28;
 
 contract LoggingContract {
     struct ToolCall {
@@ -20,18 +21,29 @@ contract LoggingContract {
 
     uint256 public constant DEFAULT_PAGE_SIZE = 10;
 
+    address public owner;
+
     mapping(string => SessionDataEntry) private sessionData;
+    mapping(string => bool) private sessionExists;
     string[] private sessionIDs;
 
     event LogsUploaded(string indexed sessionID, LogEntry[] logEntries, string txHash);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Unauthorized");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
 
     function uploadLogs(
         string memory sessionID,
         LogEntry[] memory logEntries,
         string memory txHash
-    ) external {
-        bool isNewSession = bytes(sessionData[sessionID].txHash).length == 0 &&
-            sessionData[sessionID].logs.length == 0;
+    ) external onlyOwner {
+        bool isNewSession = !sessionExists[sessionID];
 
         SessionDataEntry storage entry = sessionData[sessionID];
         delete entry.logs;
@@ -58,6 +70,7 @@ contract LoggingContract {
         entry.txHash = txHash;
 
         if (isNewSession) {
+            sessionExists[sessionID] = true;
             sessionIDs.push(sessionID);
         }
 

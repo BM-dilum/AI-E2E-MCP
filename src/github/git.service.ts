@@ -144,6 +144,15 @@ export class GitService {
     }
   }
 
+  private getLastCommitMessage(repoPath?: string): string | null {
+    const root = this.getRepoPath(repoPath);
+    try {
+      return execSync('git log -1 --pretty=%B', { cwd: root }).toString().trim();
+    } catch {
+      return null;
+    }
+  }
+
   // commit and push
   commitAndPush(branch: string, message: string, repoPath?: string): boolean {
     const root = this.getRepoPath(repoPath);
@@ -156,8 +165,27 @@ export class GitService {
         return false;
       }
 
-      this.exec(`git commit -m "${message}"`);
-      this.exec(`git push origin ${branch}`);
+      const lastCommitMessage = this.getLastCommitMessage(repoPath);
+      const shouldAmendCodeRabbitFix =
+        message === 'fix: address CodeRabbit comments' &&
+        lastCommitMessage === message;
+
+      if (shouldAmendCodeRabbitFix) {
+        execSync('git commit --amend --no-edit', {
+          cwd: root,
+          stdio: 'inherit',
+        });
+        execSync(`git push --force-with-lease origin ${branch}`, {
+          cwd: root,
+          stdio: 'inherit',
+        });
+      } else {
+        execSync(`git commit -m "${message}"`, {
+          cwd: root,
+          stdio: 'inherit',
+        });
+        execSync(`git push origin ${branch}`, { cwd: root, stdio: 'inherit' });
+      }
       this.logger.log(`✅ Pushed to ${branch}`);
       return true;
     } catch (error) {

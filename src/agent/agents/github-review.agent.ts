@@ -73,8 +73,7 @@ export class GithubReviewAgent {
     this.logger.log(`📋 Review result: ${reviewResult} for PR #${prNumber}`);
 
     // Step 3:  decides what to do based on review result
-    const shouldMerge =
-      reviewResult === 'APPROVED' || reviewResult === 'timed_out';
+    const shouldMerge = reviewResult === 'APPROVED';
 
     if (shouldMerge) {
       await this.githubService.mergePR(prNumber);

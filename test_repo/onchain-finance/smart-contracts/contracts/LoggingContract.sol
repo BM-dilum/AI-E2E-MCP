@@ -14,6 +14,7 @@ contract LoggingContract {
     }
 
     struct SessionDataEntry {
+        string sessionID;
         LogEntry[] logs;
         string cid;
         address uploader;
@@ -47,12 +48,11 @@ contract LoggingContract {
         if (!entry.exists) {
             entry.exists = true;
             entry.uploader = msg.sender;
+            entry.sessionID = sessionID;
             sessionIDs.push(sessionID);
         } else {
             require(msg.sender == entry.uploader || msg.sender == admin, "Not authorized");
         }
-
-        delete entry.logs;
 
         for (uint256 i = 0; i < logEntries.length; i++) {
             LogEntry memory logEntry = logEntries[i];
@@ -102,9 +102,11 @@ contract LoggingContract {
         SessionDataEntry[] memory results = new SessionDataEntry[](end - start);
 
         for (uint256 i = start; i < end; i++) {
-            SessionDataEntry storage storedEntry = sessionData[sessionIDs[i]];
+            string storage currentSessionID = sessionIDs[i];
+            SessionDataEntry storage storedEntry = sessionData[currentSessionID];
             uint256 resultIndex = i - start;
 
+            results[resultIndex].sessionID = currentSessionID;
             results[resultIndex].cid = storedEntry.cid;
             results[resultIndex].uploader = storedEntry.uploader;
             results[resultIndex].exists = storedEntry.exists;

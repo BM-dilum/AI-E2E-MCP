@@ -13,6 +13,10 @@ function parseMintAmount(value: string | undefined): bigint | null {
     return null;
   }
 
+  if (trimmed.startsWith("-")) {
+    throw new Error("Negative MINT_AMOUNT not allowed");
+  }
+
   try {
     return ethers.parseUnits(trimmed, 18);
   } catch {

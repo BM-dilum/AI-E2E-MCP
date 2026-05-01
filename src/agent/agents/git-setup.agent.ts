@@ -33,11 +33,11 @@ export class GitSetupAgent {
       ],
       systemPrompt: `
           You are a git setup agent.
-          Call these tools ONCE each, in this exact order:
-          1. checkout_main — call it ONCE
-          2. create_branch with name: ${branch} only use the specified branch name ${branch} — call it ONCE
-          3. push_branch branch=${branch} — ONCE
-          You are done. Do not call any tool more than once. Stop immediately after create_branch.`,
+          Call these tools ONCE each, in this exact order, then stop:
+          1. checkout_main
+          2. create_branch with branch="${branch}"
+          3. push_branch with branch="${branch}"
+          Do not call any tool more than once. Do not skip any step.`,
       middleware: [],
     });
 

@@ -40,9 +40,7 @@ export class GitService {
   //create a branch
   createBranch(branch: string, repoPath?: string) {
     const root = this.getRepoPath(repoPath);
-    // -B resets the branch to current HEAD even if it already exists locally,
-    // ensuring a fresh start from the latest base branch instead of reusing
-    // an old feature branch with stale commits.
+    // -B resets the branch to current HEAD even if it already exists locally
     execSync(`git checkout -B ${branch}`, { cwd: root });
   }
 

@@ -1,0 +1,25 @@
+{
+  "name": "nostro-vostro-smart-contracts",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Hardhat smart contracts for NOSTRO/VOSTRO finance",
+  "license": "UNLICENSED",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "clean": "hardhat clean",
+    "deploy:usd:polygon": "hardhat run scripts/deploy-usd.ts --network polygon",
+    "deploy:logging:polygon": "hardhat run scripts/deploy-logging.ts --network polygon",
+    "mint": "hardhat run scripts/mint.ts"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^22.0.0",
+    "hardhat": "^2.22.10",
+    "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "ethers": "^6.13.4"
+  }
+}
